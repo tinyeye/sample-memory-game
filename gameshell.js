@@ -187,16 +187,16 @@ bindEvent(window, 'message', function (e) {
                 changeThemeHook(e.data, e.eventInitiator);
                 break;
 
+            case 'changeGameset':
+                    changeGamesetHook(e.data, e.eventInitiator);
+                    break;
+
             case 'changeToPreviousGamesetItem':
                 changeGamesetItemHook('previous', e.data, e.eventInitiator);
                 break;
 
             case 'changeToNextGamesetItem':
                 changeGamesetItemHook('next', e.data, e.eventInitiator);
-                break;
-
-            case 'changeGameset':
-                changeGamesetHook(e.data, e.eventInitiator);
                 break;
 
             case 'gameMessage':
@@ -209,6 +209,10 @@ bindEvent(window, 'message', function (e) {
 
             case 'setGameState':
                 setGameStateHook(e.data);
+                break;
+
+            case 'setGameshellInfo':
+                setGameshellInfoHook(e.data);
                 break;
         }
     }

@@ -39,6 +39,7 @@ let currentTheme = themes['default'];
 let lockBoard = false;
 let firstCard, secondCard;
 let matchesFound = 0;
+let userType = 'student';
 
 function initialized() {
   $('#uiStartGame').click(startGameHandler);
@@ -466,14 +467,24 @@ function changeGamesetItemHook(direction, data=null, eventInitiator=false) {
 function handleGameMessageHook(messageInfo) {
   switch (messageInfo.message) {
     case 'flipCard':
-      $('.memory-card').each(() => {
-        var elCard = $(this);
-
+      var cards = $('.memory-card');
+      for (var card of cards) {
+        var elCard = $(card);
+        
         if (elCard.css('order') == messageInfo.data) {
           flipCard(elCard);
-          return false;
+          break;
         }
-      });
+      }
+      
+      // $('.memory-card').each(() => {
+      //   var elCard = $(this);
+
+      //   if (elCard.css('order') == messageInfo.data) {
+      //     flipCard(elCard);
+      //     return false;
+      //   }
+      // });
       break;
   }
 }
@@ -493,13 +504,22 @@ function getGameStateHook() {
 
   // prepare flipped card information
   var flippedCards = [];
-  $('.memory-card').each(() => {
-    elCard = $(this);
-
+  var cards = $('.memory-card');
+  for (var card of cards) {
+    var elCard = $(card);
+    
     if (elCard.hasClass('flip')) {
       flippedCards.push(elCard.css('order'));
     }
-  });
+  }
+
+  // $('.memory-card').each(() => {
+  //   elCard = $(this);
+
+  //   if (elCard.hasClass('flip')) {
+  //     flippedCards.push(elCard.css('order'));
+  //   }
+  // });
 
   sendGameState({
     cardsOrder: cardsOrder,
@@ -530,17 +550,17 @@ function setGameStateHook(gameState) {
 
   // set theme (if changed)
   if (gameState.themeName != 'default') {
-    currentThemeName = themeName;
-    currentTheme = themes[themeName];
+    currentThemeName = gameState.themeName;
+    currentTheme = themes[gameState.themeName];
     $('body').css('background', currentTheme.gameBackgroundColor);
   }
 
   // start/restart the game
   startGame();
 
-  // flip cards to match already running game's state
-  $('.memory-card').each(() => {
-    elCard = $(this);
+  var cards = $('.memory-card');
+  for (var card of cards) {
+    var elCard = $(card);
     
     var cardOrder = elCard.css('order');
     if (gameState.flippedCards.includes(cardOrder)) {
@@ -552,13 +572,53 @@ function setGameStateHook(gameState) {
         firstCard = elCard;
       } else if (cardOrder == gameState.secondCardOrder) {
         secondCard = elCard;
+      } else {
+        // if it is not the first or second opened cards
+        // disable the card
+        elCard.off('click');
       }
     }
-  });
+  }
+  // flip cards to match already running game's state
+  // $('.memory-card').each(() => {
+  //   elCard = $(this);
+    
+  //   var cardOrder = elCard.css('order');
+  //   if (gameState.flippedCards.includes(cardOrder)) {
+  //     // flip the card
+  //     elCard.addClass('flip');
+
+  //     // check if we already have a first/second card then set them up
+  //     if (cardOrder == gameState.firstCardOrder) {
+  //       firstCard = elCard;
+  //     } else if (cardOrder == gameState.secondCardOrder) {
+  //       secondCard = elCard;
+  //     }
+  //   }
+  // });
 
   // if both cards are selected
   if (firstCard && secondCard) {
     // then check for a match
     checkForMatch();
+  }
+}
+
+/**
+ * Sets Gameshell information (such as the current user type) in the game
+ * 
+ * @param {*} gameshellInfo Information needed by the game about the Gameshell
+ */
+function setGameshellInfoHook(gameshellInfo) {
+  // handle the userType information
+  userType = gameshellInfo.userType;
+
+  // hide the start/restart buttons if this was a student
+  if (userType == 'Therapist') {
+    $('#uiStartGame').show();
+    $('#uiRestartGame').show();
+  } else {
+    $('#uiStartGame').hide();
+    $('#uiRestartGame').hide();
   }
 }
