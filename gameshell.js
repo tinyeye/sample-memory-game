@@ -1,3 +1,5 @@
+let GAME_DEBUG = false;
+
 // ===========================================================================
 // CLASS DEFINITIONS
 // ===========================================================================
@@ -63,6 +65,14 @@ function bindEvent(element, eventName, eventHandler) {
  * @param {object} data data associated with this type of event
  */
 function sendToGameshell({type, data=null}) {
+
+    // for debugging purposes
+    if (GAME_DEBUG) {
+        console.log("Sending To Gameshell: " + type);
+        console.log("Data:");
+        console.log(data);
+    }
+
     // send a message to parent window that this document is ready
     if (window && window.parent) {
         window.parent.postMessage(JSON.stringify({
@@ -168,12 +178,47 @@ function sendGameState(gameState) {
 }
 
 /**
+ * Sends back a confirmation that the student(s) information has been set
+ * 
+ * @param {*} students Student(s) information: list of {id, name, controlsEnabled}
+ */
+function sendStudentsSet(students) {
+    sendToGameshell({type: 'studentsSet', data: students});
+}
+
+/**
+ * Sends back a confirmation that the selected student object has been set
+ * 
+ * @param {*} selectedStudent Student object {id, name, controlsEnabled}
+ */
+function sendSelectedStudentSet(selectedStudent) {
+    sendToGameshell({type: 'selectedStudentSet', data: selectedStudent});
+}
+
+/**
+ * Sends back confirmation the student controls has been updated (enabled/disabled))
+ * 
+ * @param {*} student Student object {id, name, controlsEnabled}
+ */
+function sendStudentControlsUpdated(student) {
+    sendToGameshell({type: 'studentControlsUpdated', data: student});
+}
+
+/**
  * Communication with the Gameshell happens through the 'message' event
  * on the Window element. All communication will be received and handled here.
  */
 bindEvent(window, 'message', function (e) {
     if (String(e.data).search('"tinyeye":true') >= 0) {
         e = JSON.parse(e.data);
+        
+        // for debugging purposes
+        if (GAME_DEBUG) {
+            console.log("Game Receiving: " + e.type);
+            console.log("Data:");
+            console.log(e.data);
+        }
+
         switch (e.type) {
             case 'startGame':
                 startGameHook(e.data, e.eventInitiator);
@@ -188,8 +233,8 @@ bindEvent(window, 'message', function (e) {
                 break;
 
             case 'changeGameset':
-                    changeGamesetHook(e.data, e.eventInitiator);
-                    break;
+                changeGamesetHook(e.data, e.eventInitiator);
+                break;
 
             case 'changeToPreviousGamesetItem':
                 changeGamesetItemHook('previous', e.data, e.eventInitiator);
@@ -213,6 +258,18 @@ bindEvent(window, 'message', function (e) {
 
             case 'setGameshellInfo':
                 setGameshellInfoHook(e.data);
+                break;
+
+            case 'setStudents':
+                setStudentsHook(e.data, e.eventInitiator);
+                break;
+
+            case 'setSelectedStudent':
+                setSelectedStudentHook(e.data, e.eventInitiator);
+                break;
+
+            case 'updateStudentControls':
+                updateStudentControlsHook(e.data, e.eventInitiator);
                 break;
         }
     }

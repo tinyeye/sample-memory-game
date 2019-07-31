@@ -1,5 +1,3 @@
-
-
 $(document).ready(initialized);
 
 // theme can be chosen from this list
@@ -40,6 +38,11 @@ let lockBoard = false;
 let firstCard, secondCard;
 let matchesFound = 0;
 let userType = 'student';
+let users = [];
+let userIds = [];
+let joinedStudents = []
+let selectedStudent = null;
+let studentScores = {};
 
 function initialized() {
   $('#uiStartGame').click(startGameHandler);
@@ -231,6 +234,11 @@ function disableCards() {
 
   matchesFound++;
 
+  // add a score to current selected student
+  studentScores[selectedStudent.id]++;
+  // update the scores
+  updateScores();
+
   if (matchesFound < maxNumberOfUniqueCards) {
     newTurn();
   } else {
@@ -279,6 +287,79 @@ function shuffleList(list) {
   return list;
 }
 
+/**
+ * Updates the players in the game
+ */
+function updatePlayers() {
+  if (!joinedStudents || joinedStudents.length == 0) return;
+
+  var elPlayers = $('#uiPlayers');
+  elPlayers.empty();
+  var firstTime = true;
+  for (var student of joinedStudents) {
+    if (!firstTime) {
+      elPlayers.append('<label>&nbsp;|&nbsp;</label>');
+    }
+    elPlayers.append($('<span id="studentspan' + student.id + '"><label id="student' + student.id + '">' + student.name + '<span id="studentscore' + student.id + '"></span></label></span>'));
+
+    updateStudentControls(student);
+    firstTime = false;
+  }
+
+  updateScores();
+}
+
+/**
+ * Updates the selected student who is allowed to play the game
+ * 
+ * @param {*} student The current selected student
+ */
+function updateSelectedStudent(student) {
+  // if we already have a selected student
+  if (selectedStudent) {
+    // clear it's style
+    $('#student' + selectedStudent.id).css('font-weight', '');
+  }
+
+  selectedStudent = student;
+  if (selectedStudent) {
+    $('#student' + student.id).css('font-weight', 'bold');
+  }
+}
+
+/**
+ * Updates the student controls' enabled/disabled flag in the game
+ * 
+ * @param {*} student The student object
+ */
+function updateStudentControls(student) {
+  if (!student) return;
+
+  if (selectedStudent && selectedStudent.id == student.id) {
+    selectedStudent.controlsEnabled = student.controlsEnabled;
+  }
+
+  if (student.controlsEnabled) {
+    $('#studentspan' + student.id + '> img').remove();
+  } else {
+    $('#studentspan' + student.id).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
+  }
+}
+
+/**
+ * Updates the student scores
+ */
+function updateScores() {
+  for (var student of joinedStudents) {
+    if (!studentScores.hasOwnProperty(student.id)) {
+      studentScores[student.id] = 0;
+    }
+
+    $('#studentscore' + student.id).empty();
+    $('#studentscore' + student.id).append($('<label>&nbsp;(score: ' + studentScores[student.id] + ')<label>'));
+  }
+}
+
 // ===========================================================================
 // EVENT HANDLERS
 // ===========================================================================
@@ -293,6 +374,8 @@ function endGameHandler() {
 }
 
 function cardClickHandler() {
+  // if this game instance is controlled by student(s), then only selected and controls-enabled student is allowed to click
+  if (userType != 'Therapist' && (!selectedStudent.controlsEnabled || !userIds.includes(selectedStudent.id))) return;
   // grab the card being flipped
   var elCard = $(this);
   // handle card flipping/unflipping...etc
@@ -467,24 +550,14 @@ function changeGamesetItemHook(direction, data=null, eventInitiator=false) {
 function handleGameMessageHook(messageInfo) {
   switch (messageInfo.message) {
     case 'flipCard':
-      var cards = $('.memory-card');
-      for (var card of cards) {
-        var elCard = $(card);
-        
+      $('.memory-card').each((index, value) => {
+        var elCard = $(value);
+
         if (elCard.css('order') == messageInfo.data) {
           flipCard(elCard);
-          break;
+          return false;
         }
-      }
-      
-      // $('.memory-card').each(() => {
-      //   var elCard = $(this);
-
-      //   if (elCard.css('order') == messageInfo.data) {
-      //     flipCard(elCard);
-      //     return false;
-      //   }
-      // });
+      });
       break;
   }
 }
@@ -504,22 +577,13 @@ function getGameStateHook() {
 
   // prepare flipped card information
   var flippedCards = [];
-  var cards = $('.memory-card');
-  for (var card of cards) {
-    var elCard = $(card);
-    
+  $('.memory-card').each((index, value) => {
+    var elCard = $(value);
+
     if (elCard.hasClass('flip')) {
       flippedCards.push(elCard.css('order'));
     }
-  }
-
-  // $('.memory-card').each(() => {
-  //   elCard = $(this);
-
-  //   if (elCard.hasClass('flip')) {
-  //     flippedCards.push(elCard.css('order'));
-  //   }
-  // });
+  });
 
   sendGameState({
     cardsOrder: cardsOrder,
@@ -528,7 +592,10 @@ function getGameStateHook() {
     flippedCards: flippedCards,
     isGameStarted: isGameStarted(),
     firstCardOrder: firstCard ? firstCard.css('order') : '',
-    secondCardOrder: secondCard ? secondCard.css('order') : ''
+    secondCardOrder: secondCard ? secondCard.css('order') : '',
+    joinedStudents: joinedStudents,
+    studentScores: studentScores,
+    selectedStudent: selectedStudent
   });
 }
 
@@ -558,9 +625,9 @@ function setGameStateHook(gameState) {
   // start/restart the game
   startGame();
 
-  var cards = $('.memory-card');
-  for (var card of cards) {
-    var elCard = $(card);
+  // flip cards to match already running game's state
+  $('.memory-card').each((index, value) => {
+    var elCard = $(value);
     
     var cardOrder = elCard.css('order');
     if (gameState.flippedCards.includes(cardOrder)) {
@@ -578,30 +645,17 @@ function setGameStateHook(gameState) {
         elCard.off('click');
       }
     }
-  }
-  // flip cards to match already running game's state
-  // $('.memory-card').each(() => {
-  //   elCard = $(this);
-    
-  //   var cardOrder = elCard.css('order');
-  //   if (gameState.flippedCards.includes(cardOrder)) {
-  //     // flip the card
-  //     elCard.addClass('flip');
-
-  //     // check if we already have a first/second card then set them up
-  //     if (cardOrder == gameState.firstCardOrder) {
-  //       firstCard = elCard;
-  //     } else if (cardOrder == gameState.secondCardOrder) {
-  //       secondCard = elCard;
-  //     }
-  //   }
-  // });
+  });
 
   // if both cards are selected
   if (firstCard && secondCard) {
     // then check for a match
     checkForMatch();
   }
+
+  studentScores = gameState.studentScores;
+  setStudentsHook(gameState.joinedStudents);
+  setSelectedStudentHook(gameState.selectedStudent);
 }
 
 /**
@@ -620,5 +674,66 @@ function setGameshellInfoHook(gameshellInfo) {
   } else {
     $('#uiStartGame').hide();
     $('#uiRestartGame').hide();
+  }
+
+  // grab the user(s) playing this game on the current computer
+  users = gameshellInfo.users;
+  // to simplify checking, put the ids in a separate list
+  for (var user of users) {
+    userIds.push(user.id);
+  }
+}
+
+/**
+ * Sets the students joined in this game
+ * 
+ * @param {*} studentsInfo Object {students, selectedStudent} that contains:
+ *                         - List of student(s) [{id, name, controlsEnabled}]
+ *                         - The selected student
+ * @param {boolean} eventInitiator Whether this hook call is responding to an event started
+ *                                 in another game instance OR it is initiaing the event itself
+ */
+function setStudentsHook(studentsInfo, eventInitiator=false) {
+  joinedStudents = studentsInfo.students;
+
+  // handle having multiple students (game-wise)
+  // for example, show their names
+  updatePlayers();
+
+  // handle the selected student
+  setSelectedStudentHook(studentsInfo.selectedStudent);
+
+  if (eventInitiator) {
+    sendStudentsSet(studentsInfo);
+  }
+}
+
+/**
+ * Sets the current selected student currently controls-enabled/allowed to play the game
+ * 
+ * @param {*} student Student object {id, name, controlsEnabled}
+ * @param {boolean} eventInitiator Whether this hook call is responding to an event started
+ *                                 in another game instance OR it is initiaing the event itself
+ */
+function setSelectedStudentHook(student, eventInitiator=false) {
+  updateSelectedStudent(student);
+
+  if (eventInitiator) {
+    sendSelectedStudentSet(selectedStudent);
+  }
+}
+
+/**
+ * Updates the controls of the student (by enabling/disabling them)
+ * 
+ * @param {*} student Student object {id, name, controlsEnabled}
+ * @param {boolean} eventInitiator Whether this hook call is responding to an event started
+ *                                 in another game instance OR it is initiaing the event itself
+ */
+function updateStudentControlsHook(student, eventInitiator=false) {
+  updateStudentControls(student);
+
+  if (eventInitiator) {
+    sendStudentControlsUpdated(student);
   }
 }
