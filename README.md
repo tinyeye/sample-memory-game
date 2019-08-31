@@ -1,141 +1,122 @@
 # Game Developer Instructions:
 
-The first step is to include `gameshell.js` in your project.
+The first step is to include `gameshell.js` in your project. Alternatively, you can use `gameshell.js` as a guide and create your own file.
+
+The `gameshell.js` file contains a function that receive incoming messages from the Gameshell and forwards it to the appropriate hanedlers (called hooks in this example). It also contains a function that sends a message to the Gameshell. In addition, it defines the GameInfo class, a function to log messages to console, and a generic way to bind to events.
+
+The game loaded on the `Therapist`'s side will receive events from it's game shell (for example: `startGame` or `endGame` events). It is the game's responsibility to forward such events to other game instances. This game instance is considered to be the `server` for other games in the session.
 
 The second step is to interact with the GameShell through the functionality provided inside `gameshell.js`.
 
-1. __Event Initiator__
-    * A game instance is considered the initiator of the event if the event initiated because of an event inside the game or because of an event in the Gameshell in which the game instance is loaded
-    * In the latter case, the Gameshell will send a `boolean` called `eventInitiator` indicating whether or not the event initiated inside of it
-    * The importance of an event initiator is that we should always call the appropriate __Feedback Functions__ whenever the game is an event initiator
-
-2. __Feedback Functions__
-    * Functions that need to be called by a game instance to announce different events. These functions are to be called ONLY if the game is an event initiator (see __Event Initiator__ section above)
-
-    * __`sendGameReady(gameInfo)`__
-      - To be called once the game is ready to start. The game, however, should NOT start the gameplay automatically. Instead, the game should stay on an intro screen or a main menu screen until the `startGameHook()` function is called
-      - Need to pass the game information object with it. The game information object should be created using the `GameInfo` class defined in `gameshell.js`
-      - Each game should define it's own themes. The list of theme names should be sent to the Gameshell inside the `GameInfo` object
-
-    * __`sendGameStarted(data)`__
-      - To be called, by the event initiator, once the game has started
-      - Other game instances will receive notification in the `startGameHook()` function to start the game
-      - The `data` object should help other game instances start the game in a way that matches the initiator game. For example, the random order of certain items in the game could be sent to other game instances so that they have the same order as the initiator game
-
-    * __`sendGameEnded(data)`__
-      - To be called, by the initiator, once the game has ended
-      - Other game instances will receive notification in the `endGameHook()` function to end the game
-      - The `data` object should help other game instances end the game in a way that matches the initiator game
-
-    * __`sendGameMessage(data)`__
-      - To be called whenever a game wants to pass data to other game instances
-      - The `data` object passed to this function call will be received by other game instances in the `handleGameMessageHook()` function
+1. __Sending a message to Gameshell__
     
-    * __`sendThemeChanged(data)`__
-      - To be called, by the initiator, whenever the game's theme has been changed
-      - Other game instances will receive notification in the `changeThemeHook()` function to update their themes accordingly
-      - The `data` object should help other game instances change the theme in a way that matches the initiator game
+    Once the game is ready, it needs to send a `gameReady` event to the Gameshell. The data object sent with this event should be of type GameInfo (the object is defined in `gameshell.js`)
 
-    * __`sendGamesetChanged(data)`__
-      - To be called, by the initiator, whenever the game's gameset has been changed
-      - Other game instances will receive notification in the `changeGamesetHook()` function
-      - The `data` object should help other game instances change the gameset in a way that matches the initiator game
+    The `gameReady` event means that the game is ready to start. However, it must be noted that the game shouldn't start on it's own. It should instead wait for the `startGame` event from the Gameshell. After the game is ready and before it starts, the game could be in an idle screen, a main menu screen, or just a title screen to name a few examples.
 
-    * __`sendGamesetItemChanged(data)`__
-      - To be called, by the initiator, whenever the game's gameset item has been changed
-      - Other game instances will receive notification in the `changeGamesetItemHook()` function
-      - The `data` object should help other game instances change the gameset item in a way that matches the initiator game
+    The structure of the `GameInfo` object is:
+    ```
+    {
+      name: string;
+      width: int;
+      height: int;
+      autoScale: boolean;
+      themes: [string];
+      gamesetsAllowed: boolean;
+      minimumGamesetCardsAllowed: int;
+      isTurnTaking: boolean;
+    }
+    ```
+    `name` - *Required. The name of the game
+    
+    `width` - *Required. Width of the game
+    
+    `height` - *Required. Height of the game
+    
+    `autoScale` - *Required. Is this game allowed to be scaled, or does the Gameshell have to abide by the width x height. `True` by default.
 
-    * __`sendGameState(data)`__
-      - To be called whenever the game's state has been requested through the `getGameStateHook()`. The game is always the initiator in this case
-      - Other game instances will receive notification in the `setGameStateHook()` function
-      - The `data` object sould contain the game state. The game state is all information necessary for other game instances to change their state to match the initiator game
+    `isTurnTaking` - *Required. Indicates whether this game has turns or not. `False` by default.
 
-    * __`sendStudentsSet(data)`__
-      - To be called, by the initiator, whenever the game's joined students are set
-      - Other game instances will receive notification in the `setStudentsHook()` function
-      - The `data` object contains the list of students that will be used to set the joined students at other game instances
+    `themes` - Optional. List of theme names available, first theme MUST be 'default'. If not provided, the game will be considered not to have any themes
 
-    * __`sendSelectedStudentSet(data)`__
-      - To be called, by the initiator, whenever the game's selected student is set. The selected student is the only student who should be able to interact with the game.
-      - Other game instances will receive notification in the `setSelectedStudentHook()` function
-      - The `data` object contains the selected student information
+    `gamesetsAllowed` - Optional. Indicates whether this game allows gamesets to be loaded. If not provided, the game is considered not to accept any gamesets
 
-    * __`sendStudentControlsUpdated(data)`__
-      - To be called, by the initiator, whenever a student's controls are updated in the game. For now, the controls is a flag that tells us whether the student is allowed to control the game or not
-      - Other game instances will receive notification in the `updateStudentControlsHook()` function
-      - The `data` object contains the student information whose controls flag has been updated
+    `minimumGamesetCardsAllowed` - Optional. Minimum number of gameset cards required per gameset. If not provided and 'gamesetsAllowed' is true, then any number of gameset cards is allowed
 
-3. __Function Hooks__
+    Messages sent must be a JSON string and are expected to have the following structure:
+    ```
+    {
+      tineye: true,
+      type: string,
+      playerIds: [int],
+      data: object
+    }
+    ```
 
-    * The following functions need to be implemented by the Game developer. They will be called by the Gameshell whenever an event occurs in the Gameshell itself, or an event occurs in another game instance from the same session.
+    `tinyeye: true` - must exist on this object to be accepted by the Gameshell
+    
+    `type` - A string message type. It must be one of the following: [`gameReady`, `sendToAll`, `sendToPlayers`, `currentPlayerChanged`]
 
-    * If the event occurs in the Gameshell, then the game will receive `True` in the `eventInitiator` parameter. Otherwise, it will receive `False`.
+    `playerIds` - A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
 
-    * __`startGameHook(data, eventInitiator=false)`__
-      - Will be called whenever the Gameshell's 'Start Game' button is clicked OR whenever another game instance in the same session has started
-      - Whenever called, it should reset the game's variables and start/restart the game
-      - If the initiator is the Gameshell, then the `data` object will be `null`. In this case the game should start the game and generate a game state object that helps remote instances to start and match this game
-      - If the initiator is a remote game instance, then it might send in a `data` object to help start this instance to match the remote one
-      - Once the game is started/restarted, and `eventInitiator` is `true`, call `sendGameStarted()` and send the game state object with it (if applicable)
+    `data` - A `GameInfo` object when the message type is `gameReady`. A `player` object - `{id, name, controlsEnabled}` - when the message type is `currentPlayerChanged`. Any other object otherwise.
 
-    * __`endGameHook(data, eventInitiator=false)`__
-      - Will be called whenever the Gameshell's 'End Game' button is clicked OR whenever another game instance in the same session has ended
-      - Whenever called, it should take the game to it's final screen where the results of the game are displayed
-      - Once the game is ended and `eventInitiator` is `true`, call `sendGameEnded()`
-      - __NOT IMPLEMENTED YET__ - maybe an image/animation will be sent from the Gameshell to display as a reward for the student
+1. __Handling Gameshell Messages__
 
-    * __`changeThemeHook(data, eventInitiator=false)`__
-      - Each game needs to define it's own themes. The game should send the list of theme names to the Gameshell with the `gameReady` event in the `GameInfo` object. The first theme should always be called `default`
-      - The Gameshell can request to change the theme to one of the names provided by the game
-      - Will be called whenever the user selects a theme in the Gameshell OR whenever another game instance in the same session has changed it's theme
-      - If no theme is selected, the `default` should always be used
-      - Once a theme is changed and `eventInitiator` is `true`, call `sendThemeChanged()` and send the theme's name with it for other game instances
+    The game should listen for incoming messages through the `message` event on the current `window` object.
 
-    * __`changeGamesetHook(data, eventInitiator=false)`__
-      - Each game sends a flag with the `gameReady` event in the `GameInfo` object to indicate whether or not it accepts Gamesets
-      - The game also needs to send - again with the `gameReady` event - the minimum number of gameset cards required from any gameset sent to the game
-      - Each game needs to have it's own `default` gameset which is used whenever no gameset is assigned to the game
-      - Will be called whenever the user selects a different gameset in the Gameshell OR whenever another game in the same session has changed it's gameset
-      - Once gameset is changed and `eventInitiator` is `true`, call `sendGamesetChanged()` and send the gameset details with it so that it gets forwarded to other game instances
-      - If no gamesets allowed for this game, then the game can ignore this hook (do nothing inside the implementation)
-      - The gameset object received should have the following structure:
-      `{cards: [{id, path, label}], isOrdered, name}`
+    The following messages will be sent to the game ONLY from the Therapist's Gameshell side:
+    * __`startGame`__
+      Prompts the game to start. No data object is sent with this event.
       
-    * __`changeGamesetItemHook(direction, data, eventInitiator=false)`__
-      - `direction` will be either `next` or `previous`
-      - Will be called whenever the Gameshell user clicks the'Next' or 'Previous' buttons to navigate through the gameset cards OR whenever another game instance in the same session has changed it's gameset item
-      - The game has the option to ignore this hook (do nothing inside the implenetation) based on type of gameplay
-      - Once the gameset item is changed and `eventInitiator` is `true`, call `sendGamesetItemChanged()` and send the item that is selected
+    * __`setTheme`__
+      Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell.
 
-    * __`handleGameMessageHook(data)`__
-      - Will be called whenever another game instance broadcasts a message to other game instances in the same session
-      
-    * __`getGameStateHook()`__
-      - Called by the Gameshell to pull a full state of the game. The state should be good enough to set any other game instance to the same state of the current game
+    * __`setGameset`__
+      Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. The Gameset object received by the game will have the following structure:
+      ```
+      { name: string, isOrdered: boolean, cards: [{label, path, order}] }
+      ```
 
-    * __`setGameStateHook(data)`__
-      - Called by the Gameshell to set the state of a game instance. The game should know how to handle the state and restart the game
+      The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
 
-    * __`setGameshellInfoHook(data)`__
-      - Once the game is ready and the `sendGameReady()` is called, the Gameshell will send it's information to the game through this hook
-      - The object that gets sent by the Gameshell has the following structure:
-      `{userType, users}`
-      - `userType` could be `'Student'`, `'Therapist'`, or `'2Students'`
-      - `users` is the users list connected to current Gameshell (no users from other game instances)
+    * __`setPreviousGamesetCard`__
+      Prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.
 
-    * __`setStudentsHook(data, eventInitiator=false)`__
-      - Will be called whenever a new student joins the Gameshell session
-      - The `data` object is a list of all students joined so far in the current game session (including users of other gameshell instances)
-      - Whenever called, it should handle the joined students any way the game wants. For example, display player names..etc.
-      - Once the students are handled, if this is the `eventInitiator` call `sendStudentsSet()`
+    * __`setNextGamesetCard`__
+    Prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.
 
-    * __`setSelectedStudentHook(data, eventInitiator=false)`__
-      - Will be called whenever the selected student has changed. The selected student is the only student allowed to play the game. User input should ignored from other users.
-      - The `data` object contains the selected student information
-      - After handling the selected student, if this is the `eventInitiator` then call `sendSelectedStudentSet()`
+    * __`endGame`__
+    Prompts the game to end. No data object is sent with this event.
 
-    * __`updateStudentControlsHook(data, eventInitiator=false)`__
-      - Will be called whenever a student's controls have been disabled or enabled. A student whose controls are disabled should not be able to interact with the game even if this student is the current selected student
-      - The `data` object contains student information for the student whose controls have been updated
-      - After handling the student, if this was an `eventInitiator` then call `sendStudentControlsUpdated()`
+    * __`setPlayers`__
+    Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
+    ```
+    [{id, name, controlsEnabled}]
+    ```
+
+    * __`setCurrentPlayer`__
+    Sets the current player who is actively playing the game. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so
+
+    * __`updatePlayerControls`__
+    Updates the `controlsEnabled` flag of a player's object. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
+
+    The following messages will be sent to the game from their respective Gameshell sides:
+    * __`gameMessage`__
+    Whenever a game sends a `sendToAll` or `sendToPlayers` message to the Gameshell, the Gameshell in turn will forward this message to all other games or to a set of players, respectively. The message received by other game(s) is received in the `gameMessage` event. The game should know how to handle such messages as they were sent by the game itself (from another instance).
+
+    * __`setGameshellInfo`__
+    Whenever the game sends the `gameReady` event to the Gameshell, the Gameshell will respond by sending the game a `setGameshellInfo` message. Through this message, the Gameshell will introduce itself by sending an object with the following structure:
+    ```
+    {
+      userType: 'Therapist'|'Student'|'2Students',
+      players: [{id, name, controlsEnabled}],
+      currentPlayer: {id, name, controlsEnabled}
+    }
+    ```
+
+    `userType` - The type of the user of the current Gameshell where this game is loaded. Currently, the gameshell user type can be one of three values: `Therapist`, `Student`, or `2Students`. A `Therapist` user has controls that enable special interaction with the game. `Student` means only one student is at the computer playing the game. `2Students` means two students are at one computer playing the game. Students can only interact with the game itself. No special controls on their end.
+
+    `players` - The list of __local player(s)__ currently connected to the Gameshell loading this game instance.
+
+    `currentPlayer` - In turn taking games, this is the current player allowed to interact with the game.

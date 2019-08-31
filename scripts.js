@@ -6,13 +6,15 @@ let themes = {
     backImage: './assets/js-badge.svg',
     backAlt: 'JS Badge',
     cardBackgroundColor: 'lightgreen',
-    gameBackgroundColor: 'darkolivegreen'
+    gameBackgroundColor: 'darkolivegreen',
+    playerNamesColor: '#000000'
   },
   'tinyeye': {
     backImage: './assets/te-butterfly.png',
     backAlt: 'TE Butterfly',
     cardBackgroundColor: '#1C7CCC',
-    gameBackgroundColor: '#060AB2'
+    gameBackgroundColor: '#060AB2',
+    playerNamesColor: '#FFFFFF'
   }
 };
 
@@ -37,12 +39,15 @@ let currentTheme = themes['default'];
 let lockBoard = false;
 let firstCard, secondCard;
 let matchesFound = 0;
-let userType = 'student';
-let users = [];
-let userIds = [];
-let joinedStudents = []
-let selectedStudent = null;
-let studentScores = {};
+let userType = 'player';
+
+let players = {};
+let playerScores = {};
+let localPlayerIds = [];
+let currentPlayer = null;
+
+let isGameReady = false;
+let messageQueue = [];
 
 function initialized() {
   $('#uiStartGame').click(startGameHandler);
@@ -67,26 +72,52 @@ function initialized() {
     name: 'Memory Game',
     width: 640,
     height: 640,
-    autoScale: false
+    autoScale: false,
+    isTurnTaking: true
   });
 
   gi.themes = themeNames;
   gi.gamesetsAllowed = true;
   gi.minimumGamesetCardsAllowed = 6;
-  sendGameReady(gi);
+  
+  sendToGameshell({
+    type: 'gameReady',
+    data: gi
+  });
 }
 
+/**
+ * Sets the current theme for the game
+ * @param {String} themeName the name of the theme to use
+ */
 function setTheme(themeName='default') {
   currentThemeName = themeName;
   currentTheme = themes[themeName];
 
   // set the board's background color from the theme
   $('body').css('background', currentTheme.gameBackgroundColor);
-  // since changing the theme will affect the cards
-  // check if the game is already started
-  if (isGameStarted()) {
-    // then restart it again
-    startGameHook(null, true);
+  $('#uiPlayers').css('color', currentTheme.playerNamesColor);
+}
+
+/**
+ * Sets the gameset for the game
+ * @param {Object} gameset The gameset object {cards: [{id, path, label}], isOrdered, name}
+ */
+function setGameset(gameset) {
+  // if no gameset sent in
+  if (gameset == null) {
+    isCustomGameSet = false;
+    // reset the memory cards into their default ones (clone the original list)
+    currentMemoryCards = memoryCards.slice(0);
+  } else {
+    isCustomGameSet = true;
+    // otherwise, clear the current cards list
+    currentMemoryCards = [];
+    // loop over incoming cards
+    for (var card of gameset.cards) {
+      // add each card into the current list
+      currentMemoryCards.push({id: card.id, frontImage: card.path, frontAlt: card.label});
+    }
   }
 }
 
@@ -158,7 +189,16 @@ function createGameCards() {
  * Starts/Restarts a new game
  * Advances the game from the intro screen into the game area
  */
-function startGame() {
+function startGame(order=null) {
+  // if we have an incoming card order list
+  if (order) {
+    // use it to start our game
+    cardsOrder = order;
+  } else {
+    // otherwise, shuffle the built-in card order list
+    shuffleList(cardsOrder);
+  }
+  
   // reset # of found matches
   matchesFound = 0;
   // reset game variables
@@ -234,8 +274,10 @@ function disableCards() {
 
   matchesFound++;
 
-  // add a score to current selected student
-  studentScores[selectedStudent.id]++;
+  // add a score to current selected player
+  if (currentPlayer) {
+    playerScores[currentPlayer.id]++;
+  }
   // update the scores
   updateScores();
 
@@ -243,7 +285,7 @@ function disableCards() {
     newTurn();
   } else {
     setTimeout(() => {
-      endGameHook(true);
+      endGameHook();
     }, 1000);
   }
 }
@@ -291,289 +333,141 @@ function shuffleList(list) {
  * Updates the players in the game
  */
 function updatePlayers() {
-  if (!joinedStudents || joinedStudents.length == 0) return;
+  if (!players || players.length == 0) return;
 
   var elPlayers = $('#uiPlayers');
   elPlayers.empty();
   var firstTime = true;
-  for (var student of joinedStudents) {
+  for (var playerId in players) {
+    var player = players[playerId];
     if (!firstTime) {
       elPlayers.append('<label>&nbsp;|&nbsp;</label>');
     }
-    elPlayers.append($('<span id="studentspan' + student.id + '"><label id="student' + student.id + '">' + student.name + '<span id="studentscore' + student.id + '"></span></label></span>'));
+    elPlayers.append($('<span id="playerspan' + playerId + '"><label id="player' + playerId + '">' + player.name + '<span id="playerscore' + playerId + '"></span></label></span>'));
 
-    updateStudentControls(student);
+    updatePlayerControls(player);
     firstTime = false;
   }
 
+  updateCurrentPlayer(currentPlayer);
   updateScores();
 }
 
 /**
- * Updates the selected student who is allowed to play the game
+ * Updates the selected player who is allowed to play the game
  * 
- * @param {*} student The current selected student
+ * @param {*} player The current selected player
  */
-function updateSelectedStudent(student) {
-  // if we already have a selected student
-  if (selectedStudent) {
+function updateCurrentPlayer(player) {
+  // if we already have a selected player
+  if (currentPlayer) {
     // clear it's style
-    $('#student' + selectedStudent.id).css('font-weight', '');
+    $('#player' + currentPlayer.id).css('font-weight', '');
   }
 
-  selectedStudent = student;
-  if (selectedStudent) {
-    $('#student' + student.id).css('font-weight', 'bold');
+  currentPlayer = player;
+  if (currentPlayer) {
+    $('#player' + player.id).css('font-weight', 'bold');
   }
 }
 
 /**
- * Updates the student controls' enabled/disabled flag in the game
+ * Updates the player controls' enabled/disabled flag in the game
  * 
- * @param {*} student The student object
+ * @param {*} player The player object
  */
-function updateStudentControls(student) {
-  if (!student) return;
+function updatePlayerControls(player) {
+  if (!player) return;
 
-  if (selectedStudent && selectedStudent.id == student.id) {
-    selectedStudent.controlsEnabled = student.controlsEnabled;
+  if (currentPlayer && currentPlayer.id == player.id) {
+    currentPlayer.controlsEnabled = player.controlsEnabled;
   }
 
-  if (student.controlsEnabled) {
-    $('#studentspan' + student.id + '> img').remove();
+  if (player.controlsEnabled) {
+    $('#playerspan' + player.id + '> img').remove();
   } else {
-    $('#studentspan' + student.id).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
+    $('#playerspan' + player.id).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
   }
 }
 
 /**
- * Updates the student scores
+ * Updates the player scores
  */
 function updateScores() {
-  for (var student of joinedStudents) {
-    if (!studentScores.hasOwnProperty(student.id)) {
-      studentScores[student.id] = 0;
+  for (var playerId in players) {
+    if (!(playerId in playerScores)) {
+      playerScores[playerId] = 0;
     }
 
-    $('#studentscore' + student.id).empty();
-    $('#studentscore' + student.id).append($('<label>&nbsp;(score: ' + studentScores[student.id] + ')<label>'));
+    $('#playerscore' + playerId).empty();
+    $('#playerscore' + playerId).append($('<label>&nbsp;(score: ' + playerScores[playerId] + ')<label>'));
   }
+}
+
+/**
+ * Sets players to the current game
+ * @param {Object} allPlayers List of player(s) currently playing the game
+ *    [{id, name, controlsEnabled}]
+ *    - controlsEnabled: True is the player is allowed to control the game
+ * @returns List of added player ids
+ */
+function setPlayers(allPlayers) {
+  // clear the players list
+  players = {};
+  for (var player of allPlayers) {
+    // add them to the players list
+    players[player.id] = player;
+  }
+
+  updatePlayers();
 }
 
 // ===========================================================================
 // EVENT HANDLERS
 // ===========================================================================
 
+/**
+ * Handle clicking the 'Start Game' button inside the game.
+ * For this game implementation, the 'Start Game' button only shows for Therapists
+ * So we will handle it using the same hook so that other games are started as well
+ */
 function startGameHandler() {
-  startGameHook(null, true);
+  startGameHook();
 }
 
 
 function endGameHandler() {
-  endGameHook(true);
+  endGameHook();
 }
 
 function cardClickHandler() {
-  // if this game instance is controlled by student(s), then only selected and controls-enabled student is allowed to click
-  if (userType != 'Therapist' && (!selectedStudent.controlsEnabled || !userIds.includes(selectedStudent.id))) return;
+  // if this game instance is controlled by player(s), then only selected and controls-enabled player is allowed to click
+  if (!currentPlayer.controlsEnabled || !localPlayerIds.includes(currentPlayer.id)) return;
   // grab the card being flipped
   var elCard = $(this);
   // handle card flipping/unflipping...etc
   flipCard(elCard);
   // send a gameMessage to other game instances
-  sendGameMessage({message: 'flipCard', data: elCard.css('order')});
-}
-
-// =============================================
-
-//
-// Each of the following Hook functions MUST receive a data object and an eventInitiator
-// The eventInitiator indicates whether the initiator of this event is THIS instance of the game
-// (or the GameShell associated with THIS instance of the game). In which case the eventInitiator is True.
-// Otherwise, the eventInitiator is False. When it is False, these hooks should NOT call the 'send' methods
-// otherwise we will end up with infinite loop.
-//
-// The data object comes from three sources:
-// 1- From the Gameshell when the gameshell is the initiator of the event (e.g., user clicked Start Game on GameShell)
-// 2- From THIS game instance when the user clicks inisde the game (e.g., flipping a card)
-// 3- From other game instances when the user interacts with those instances, a message is sent here.
-// 
-// 2nd and 3rd instances are controlled here. We decide what to send to other game instances, and we decide 
-// how to call the hooks internally. So we control the value of the Data object.
-// The 1st instance, however, comes from the Gameshell. The standard information sent from the Gameshell
-// is described next to each function below. 
-
-/**
- * Starts the game. If an initial state is sent in, then use that to initialize the game.
- * If no initial game state is sent in, then after starting the game, send back the current game state
- * so that it gets used by other Gameshells to initialize their games.
- * 
- * @param {*} gameState Initial game state sent by other game instances. Null if this 
- *                      game (or Gameshell) is initiating the event
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function startGameHook(gameState, eventInitiator=false) {
-  
-  // if we have an incoming gameState
-  if (gameState) {
-    // use it to start our game
-    // the game state of the Memory Game consists of a list of card order
-    cardsOrder = gameState;
-  } else {
-    // shuffle the built-in card order list and get a copy into the gameState
-    gameState = shuffleList(cardsOrder);
-  }
-
-  // start/restart the game
-  // the cardsOrder list will be used in the start process
-  startGame();
-
-  // if we are initiating the event
-  if (eventInitiator) {
-    // send to the GameShell a 'gameStarted' message along with the game state
-    sendGameStarted(gameState);
-  }
-}
-
-/**
- * Ends the game
- * 
- * @param {*} data Data object sent by other game instances. Null if this game (or Gameshell) is initiating the event
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function endGameHook(data, eventInitiator=false) {
-  // for this game, we don't send/receive a data object on gameEnd events
-
-  // end the game
-  endGame();
-  // if we are initiating the event
-  if (eventInitiator) {
-    // broadcast the event
-    sendGameEnded();
-  }
-}
-
-/**
- * Changes the theme of the game based on the theme name passed to it
- * 
- * @param {string} theme Name of theme to be applied. Must send a 'string' to other game instances.
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function changeThemeHook(theme, eventInitiator=false) {
-  // change the theme
-  setTheme(theme);
-  // if we are initiating the event
-  if (eventInitiator) {
-    // send to GameShell
-    sendThemeChanged(theme);
-  }
-}
-
-/**
- * Changes the gameset for this game.
- * 
- * @param {*} data If call initiated by the Gameshell, then this is the gameset to be used in this game.
- *                 It has the following structure: {cards: [{id, path, label}], isOrdered, name}
- *                 If the call is initiated by another game instance, then this object consists 
- *                 of whatever we sent from inside the game (see sendGamesetChanged() at the end of the function).
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function changeGamesetHook(data, eventInitiator=false) {
-  var gameset = data.hasOwnProperty('gameset') ? data.gameset : data;
-  // if no gameset sent in
-  if (gameset == null) {
-    isCustomGameSet = false;
-    // reset the memory cards into their default ones (clone the original list)
-    currentMemoryCards = memoryCards.slice(0);
-  } else {
-    isCustomGameSet = true;
-    // otherwise, clear the current cards list
-    currentMemoryCards = [];
-    // loop over incoming cards
-    for (var card of gameset.cards) {
-      // add each card into the current list
-      currentMemoryCards.push({id: card.id, frontImage: card.path, frontAlt: card.label});
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'flipCard',
+      data: elCard.css('order')
     }
-  }
-
-  // restart the game if it has already been started
-  var gameState = data.hasOwnProperty('cardsOrder') ? data.cardsOrder : null;
-  if (isGameStarted()) {
-    if (gameState) {
-      cardsOrder = gameState;
-    } else {
-      // shuffle the cards
-      gameState = shuffleList(cardsOrder);
-    }
-
-    // restart the game
-    // the cardsOrder AND currentMemoryCards lists will be used in starting the game
-    startGame();
-  }
-
-  // if we are initiating the event
-  if (eventInitiator) {
-    // send back to Gameshell
-    sendGamesetChanged({gameset: gameset, cardsOrder: gameState});
-  }
+  });
 }
-
-/**
- * Changes the current gameset card into a previous or next card.
- * 
- * @param {string} direction The direction to change the gameset card. 'Next' to go forward or
- *                           'previous' to go backwards.
- * @param {*} data Data needed to help move to next/previous gameset card. Could be the 
- *                 gameset card itself that got changed to in the initiator game instance
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function changeGamesetItemHook(direction, data=null, eventInitiator=false) {
-  // this event is not handled in this game
-  
-  // if handled, don't forget to send back a message
-  // if (eventInitiator) {
-  //   sendGamesetItemChanged(direction, data);
-  // }
-}
-
-/**
- * Handles messages sent by other instances of this game
- * No need for eventInitiator because all game messages received don't need to be broadcasted
- * 
- * @param {*} messageInfo Data object containing a 'message' and it's associated 'data'
- */
-function handleGameMessageHook(messageInfo) {
-  switch (messageInfo.message) {
-    case 'flipCard':
-      $('.memory-card').each((index, value) => {
-        var elCard = $(value);
-
-        if (elCard.css('order') == messageInfo.data) {
-          flipCard(elCard);
-          return false;
-        }
-      });
-      break;
-  }
-}
-
 
 /**
  * Grabs all information necessary to rebuilt the THIS game's state in another game instance.
- * Used mainly when another game instance joins the game in the middle of game play
  */
-function getGameStateHook() {
+function getGameState() {
   // for this game, we need to send
   // - cardsOrder
   // - gameset (stored in 'currentMemoryCards' here)
   // - selected theme
   // - NOT APPLICAPLE HERE - current game set image
   // - information about which cards are flipped, the rest are unflipped
+  // - player information (list of players and scores)
 
   // prepare flipped card information
   var flippedCards = [];
@@ -585,7 +479,7 @@ function getGameStateHook() {
     }
   });
 
-  sendGameState({
+  return {
     cardsOrder: cardsOrder,
     currentMemoryCards: isCustomGameSet ? currentMemoryCards : null,
     themeName: currentThemeName,
@@ -593,10 +487,10 @@ function getGameStateHook() {
     isGameStarted: isGameStarted(),
     firstCardOrder: firstCard ? firstCard.css('order') : '',
     secondCardOrder: secondCard ? secondCard.css('order') : '',
-    joinedStudents: joinedStudents,
-    studentScores: studentScores,
-    selectedStudent: selectedStudent
-  });
+    players: Object.values(players),
+    playerScores: playerScores,
+    currentPlayer: currentPlayer
+  };
 }
 
 /**
@@ -604,11 +498,8 @@ function getGameStateHook() {
  * 
  * @param {*} gameState The game state information
  */
-function setGameStateHook(gameState) {
+function setGameState(gameState) {
   if (!gameState) return;
-
-  // set the cards order
-  cardsOrder = gameState.cardsOrder;
 
   // set the gameset (if any)
   if (gameState.currentMemoryCards) {
@@ -616,46 +507,65 @@ function setGameStateHook(gameState) {
   }
 
   // set theme (if changed)
-  if (gameState.themeName != 'default') {
-    currentThemeName = gameState.themeName;
-    currentTheme = themes[gameState.themeName];
-    $('body').css('background', currentTheme.gameBackgroundColor);
+  setTheme(gameState.themeName);
+
+  // start/restart the game
+  if (gameState.isGameStarted) {
+    startGame(gameState.cardsOrder);
+  
+    // flip cards to match already running game's state
+    $('.memory-card').each((index, value) => {
+      var elCard = $(value);
+      
+      var cardOrder = elCard.css('order');
+      if (gameState.flippedCards.includes(cardOrder)) {
+        // flip the card
+        elCard.addClass('flip');
+
+        // check if we already have a first/second card then set them up
+        if (cardOrder == gameState.firstCardOrder) {
+          firstCard = elCard;
+        } else if (cardOrder == gameState.secondCardOrder) {
+          secondCard = elCard;
+        } else {
+          // if it is not the first or second opened cards
+          // disable the card
+          elCard.off('click');
+        }
+      }
+    });
+
+    // if both cards are selected
+    if (firstCard && secondCard) {
+      // then check for a match
+      checkForMatch();
+    }
   }
 
+  currentPlayer = gameState.currentPlayer;
+  playerScores = gameState.playerScores;
+  setPlayers(gameState.players);
+}
+
+// ===========================================================================
+// HANDLONG GAMESHELL EVENTS
+// ===========================================================================
+
+/**
+ * Starts the game, then send a message to all other game instances to start their games
+ */
+function startGameHook() {
   // start/restart the game
   startGame();
 
-  // flip cards to match already running game's state
-  $('.memory-card').each((index, value) => {
-    var elCard = $(value);
-    
-    var cardOrder = elCard.css('order');
-    if (gameState.flippedCards.includes(cardOrder)) {
-      // flip the card
-      elCard.addClass('flip');
-
-      // check if we already have a first/second card then set them up
-      if (cardOrder == gameState.firstCardOrder) {
-        firstCard = elCard;
-      } else if (cardOrder == gameState.secondCardOrder) {
-        secondCard = elCard;
-      } else {
-        // if it is not the first or second opened cards
-        // disable the card
-        elCard.off('click');
-      }
+  // send message to all other games to start their game
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'startGame',
+      data: cardsOrder
     }
   });
-
-  // if both cards are selected
-  if (firstCard && secondCard) {
-    // then check for a match
-    checkForMatch();
-  }
-
-  studentScores = gameState.studentScores;
-  setStudentsHook(gameState.joinedStudents);
-  setSelectedStudentHook(gameState.selectedStudent);
 }
 
 /**
@@ -666,8 +576,8 @@ function setGameStateHook(gameState) {
 function setGameshellInfoHook(gameshellInfo) {
   // handle the userType information
   userType = gameshellInfo.userType;
-
-  // hide the start/restart buttons if this was a student
+  
+  // hide the start/restart buttons if this was a player
   if (userType == 'Therapist') {
     $('#uiStartGame').show();
     $('#uiRestartGame').show();
@@ -677,63 +587,278 @@ function setGameshellInfoHook(gameshellInfo) {
   }
 
   // grab the user(s) playing this game on the current computer
-  users = gameshellInfo.users;
-  // to simplify checking, put the ids in a separate list
-  for (var user of users) {
-    userIds.push(user.id);
+  for (var player of gameshellInfo.players) {
+    players[player.id] = player;
+    // these are the local players, grab their ids
+    localPlayerIds.push(player.id);
   }
-}
-
-/**
- * Sets the students joined in this game
- * 
- * @param {*} studentsInfo Object {students, selectedStudent} that contains:
- *                         - List of student(s) [{id, name, controlsEnabled}]
- *                         - The selected student
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
- */
-function setStudentsHook(studentsInfo, eventInitiator=false) {
-  joinedStudents = studentsInfo.students;
-
-  // handle having multiple students (game-wise)
-  // for example, show their names
+  
+  currentPlayer = gameshellInfo.currentPlayer;
   updatePlayers();
 
-  // handle the selected student
-  setSelectedStudentHook(studentsInfo.selectedStudent);
-
-  if (eventInitiator) {
-    sendStudentsSet(studentsInfo);
-  }
+  // the game is now ready
+  isGameReady = true;
+  handleMessageQueue();
 }
 
 /**
- * Sets the current selected student currently controls-enabled/allowed to play the game
+ * Changes the theme of the game based on the theme name passed to it
  * 
- * @param {*} student Student object {id, name, controlsEnabled}
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
+ * @param {string} theme Name of theme to be applied.
  */
-function setSelectedStudentHook(student, eventInitiator=false) {
-  updateSelectedStudent(student);
-
-  if (eventInitiator) {
-    sendSelectedStudentSet(selectedStudent);
+function setThemeHook(theme) {
+  // change the theme
+  setTheme(theme);
+  
+  // since changing the theme will affect the cards
+  // check if the game is already started
+  if (isGameStarted()) {
+    // then restart it again
+    startGame();
   }
+
+  // send message to all other games to change their themes
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'setTheme',
+      data: {theme: theme, cardsOrder: cardsOrder}
+    }
+  });
 }
 
 /**
- * Updates the controls of the student (by enabling/disabling them)
+ * Changes the gameset for this game.
  * 
- * @param {*} student Student object {id, name, controlsEnabled}
- * @param {boolean} eventInitiator Whether this hook call is responding to an event started
- *                                 in another game instance OR it is initiaing the event itself
+ * @param {*} data Gameset to use in this game.
  */
-function updateStudentControlsHook(student, eventInitiator=false) {
-  updateStudentControls(student);
+function setGamesetHook(data) {
+  // update the gameset
+  setGameset(data);
 
-  if (eventInitiator) {
-    sendStudentControlsUpdated(student);
+  // since changing the gameset will affect the cards
+  // check if the game is already started
+  if (isGameStarted()) {
+    // then restart it again
+    startGame();
   }
+
+  // send message to all other games to change their themes
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'setGameset',
+      data: {gameset: data, cardsOrder: cardsOrder}
+    }
+  });
+}
+
+/**
+ * Changes the current gameset card into a previous or next card.
+ * 
+ * @param {string} direction The direction to change the gameset card. 'Next' to go forward or
+ *                           'previous' to go backwards.
+ */
+function setGamesetItemHook(direction) {
+  // this method doesn't apply to this game
+
+  // example implementation
+  // grab the card
+  //var card = direction == 'next' ? nextCard : previousCard;
+  //setGamesetCard(card);
+
+  // once the gameset card is changed, send a message to all other game instances
+  //sendToGameshell({
+  //  type: 'sendToAll',
+  //  data: {
+  //    message: 'setGamesetItem',
+  //    data: {gamesetItem: card}
+  //  }
+  //});
+}
+
+/**
+ * Ends the game
+ * 
+ * @param {*} data Data object sent by other game instances. Null if this game (or Gameshell) is initiating the event
+ */
+function endGameHook() {
+  // end the game
+  endGame();
+
+  // send message to all other games to start their game
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'endGame'
+    }
+  });
+}
+
+/**
+ * Sets the players joined in this game
+ * 
+ * @param {*} playersInfo List of player(s) [{id, name, controlsEnabled}]
+ */
+function setPlayersHook(allPlayers) {
+  // store new player ids
+  var newPlayerIds = [];
+  // loop over incoming players
+  for (var player of allPlayers) {
+    if (!players.hasOwnProperty(player.id)) {
+      // grab the list of ids of newly joined players
+      newPlayerIds.push(player.id);
+    }
+  }
+
+  // add players to this game
+  setPlayers(allPlayers);
+
+  // send a message to all
+  // informing them of the new players
+  // and sending the gamestate to the new players
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'setPlayers',
+      data: {gameState: getGameState(), newPlayerIds: newPlayerIds, players: allPlayers}
+    }
+  });
+}
+
+/**
+ * Sets the current selected player currently controls-enabled/allowed to play the game
+ * 
+ * @param {*} player Player object {id, name, controlsEnabled}
+ */
+function setCurrentPlayerHook(player) {
+  updateCurrentPlayer(player);
+
+  // inform other game instances
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'updateCurrentPlayer',
+      data: player
+    }
+  });
+
+  // inform Gameshell about player change
+  sendToGameshell({
+    type: 'setCurrentPlayer',
+    data: currentPlayer
+  });
+}
+
+/**
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} player Player object {id, name, controlsEnabled}
+ */
+function updatePlayerControlsHook(player) {
+  updatePlayerControls(player);
+
+  // inform other game instances
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'updatePlayerControls',
+      data: player
+    }
+  });
+}
+
+/**
+ * Handles messages sent by other game instances
+ * 
+ * @param {*} messageInfo Data object containing a 'message' and it's associated 'data'
+ */
+function handleGameMessageHook(messageInfo) {
+
+  // if game is not ready yet
+  if (!isGameReady) {
+    // then store the message in a queue
+    messageQueue.push(messageInfo);
+    return;
+  }
+
+  var message = messageInfo.message;
+  var data = messageInfo.data;
+  switch (message) {
+    case 'startGame':
+      startGame(data);
+      break;
+
+    case 'setTheme':
+      setTheme(data.theme);
+      // if the game had already started before updating the theme
+      if (isGameStarted()) {
+        // then restart the game
+        startGame(data.cardsOrder);
+      }
+      break;
+
+    case 'setGameset':
+      setGameset(data.gameset);
+      // if the game had already started before updating the gameset
+      if (isGameStarted()) {
+        // then restart the game
+        startGame(data.cardsOrder);
+      }
+      break;
+
+    // not needed in this game
+    //case 'setGamesetItem':
+    //  setGamesetItem();
+    //  break;
+
+    case 'endGame':
+      endGame();
+      break;
+
+    case 'setPlayers':
+      var isLocalPlayerFound = false;
+      // if the local player is one of the new players
+      for (var playerId of data.newPlayerIds) {
+        if (localPlayerIds.includes(playerId)) {
+          // then set the game state
+          setGameState(data.gameState);
+          isLocalPlayerFound = true;
+          break;
+        }
+      }
+
+      // otherwise
+      if (!isLocalPlayerFound) {
+        // set the players
+        setPlayers(data.players);
+      }
+      break;
+
+    case 'updateCurrentPlayer':
+      updateCurrentPlayer(data);
+      break;
+
+    case 'updatePlayerControls':
+      updatePlayerControls(data);
+      break;
+
+    case 'flipCard':
+      $('.memory-card').each((index, value) => {
+        var elCard = $(value);
+
+        if (elCard.css('order') == data) {
+          flipCard(elCard);
+          return false;
+        }
+      });
+      break;
+  }
+}
+
+function handleMessageQueue() {
+  for (var messageInfo of messageQueue) {
+    handleGameMessageHook(messageInfo);
+  }
+  messageQueue = [];
 }

@@ -1,4 +1,4 @@
-let GAME_DEBUG = false;
+let SHOW_LOG_MESSAGES = true;
 
 // ===========================================================================
 // CLASS DEFINITIONS
@@ -25,9 +25,11 @@ let GAME_DEBUG = false;
  * 
  *  minimumGamesetCardsAllowed - minimum number of gameset cards required per gameset
  *                               If not provided and 'gamesetsAllowed' is true, then any number of gameset cards is allowed
+ * 
+ *  isTurnTaking - indicates whether this game has turns or not
  */
 class GameInfo {
-    constructor({ name, width, height, autoScale }) {
+    constructor({ name, width, height, autoScale=true, isTurnTaking=false }) {
         this.name = name;
         this.width = width;
         this.height = height;
@@ -35,6 +37,7 @@ class GameInfo {
         this.themes = [];
         this.gamesetsAllowed = false;
         this.minimumGamesetCardsAllowed = 0;
+        this.isTurnTaking = isTurnTaking;
     }
 }
 
@@ -59,218 +62,104 @@ function bindEvent(element, eventName, eventHandler) {
 }
 
 /**
+ * Prints a log message to the console
+ * @param {message} text to be printed to the console
+ * @param {data} data object to be printed as is
+ */
+function logMessage(text, data=null) {
+    if (!SHOW_LOG_MESSAGES) return;
+
+    // prepare timestamp
+    let dateOptions = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'};
+    let timestamp = new Date().toLocaleDateString("en-US", dateOptions);
+
+    console.log('\n' + timestamp + ' - GAME LOG MESSAGE ----');
+    console.log(text);
+    if (data) console.log(data);
+}
+
+/**
  * Sends an event to the Gameshell
  * 
  * @param {string} type type of event
  * @param {object} data data associated with this type of event
  */
-function sendToGameshell({type, data=null}) {
+function sendToGameshell({type, playerIds=null, data=null}) {
 
-    // for debugging purposes
-    if (GAME_DEBUG) {
-        console.log("Sending To Gameshell: " + type);
-        console.log("Data:");
-        console.log(data);
-    }
+    logMessage('Sending To Gameshell', {type: type, playerIds: playerIds, data: data});
 
     // send a message to parent window that this document is ready
     if (window && window.parent) {
         window.parent.postMessage(JSON.stringify({
             tinyeye: true,    // REQUIRED - important for filtering Gameshell messages
             type: type,
+            playerIds: playerIds,
             data: data
         }), '*');
     }
 }
 
-/**
- * Sends a 'gameReady' event to the Gameshell
- * This event should be sent once the game elements are ready to be displayed
- * Also this event introduces the game to the Gameshell (it's name, width, height...etc)
- * 
- * @param {GameInfo} data Game information object
- */
-function sendGameReady(data=null) {
-    sendToGameshell({type: 'gameReady', data: data});
-}
-
-/**
- * Sends a 'gameStarted' event to the Gameshell
- * This event tells the gameshell that the game has started. The Gameshell in turn
- * forwards this event and the data sent with it to other game instances
- * 
- * @param {*} data Data object to be sent to other instances of this game.
- *                 It should help other instances to start the game to the same game state
- *                 as this game
- */
-function sendGameStarted(data=null) {
-    sendToGameshell({type: 'gameStarted', data: data});
-}
-
-/**
- * Sends a 'gameEnded' event to the Gameshell
- * This event tells the Gameshell that the game has ended. The gameshell in turn
- * forwards this event and the data sent with it to other game instances
- * 
- * @param {*} data Data object to be sent to other instances of this game.
- *                 It should help other instances to end the game in a similar manner
- *                 as this game
- */
-function sendGameEnded(data=null) {
-    sendToGameshell({type: 'gameEnded', data: data});
-}
-
-/**
- * Sends a 'gameMessage' to the Gameshell
- * This message indicates that an action or game state change has heppend in this 
- * current game and that it should be applied to other game instances.
- * 
- * @param {*} data Data object to be sent to other instances of this game.
- *                 It should help other instances to update themselves in a manner
- *                 similar to this game instance
- */
-function sendGameMessage(data=null) {
-    sendToGameshell({type: 'gameMessage', data: data});
-}
-
-/**
- * Sends a 'themeChanged' event to the Gameshell
- * 
- * @param {*} data Data object to be sent to other instances of this game.
- *                 It should help other instances to update their theme in a similar manner
- *                 as the current game
- */
-function sendThemeChanged(data=null) {
-    sendToGameshell({type: 'themeChanged', data: data});
-}
-
-/**
- * Sends a 'gamesetChanged' event to the Gameshell.
- * The Gameshell in turn forwards this message and it's data to other game instances
- * 
- * @param {*} data Data object to be sent to other instances of this game
- *                 to help them update their gamesets in a similar manner to this game
- */
-function sendGamesetChanged(data=null) {
-    sendToGameshell({type: 'gamesetChanged', data: data});
-}
-
-/**
- * Sends a 'gamesetItemChanged' event to the Gameshell.
- * The Gameshell in turn forwards this message and it's data to other game instances
- * 
- * @param {*} data Data object to be sent to other games instances
- *                 to help them update the current gameset card in a similar manner
- *                 as this game
- */
-function sendGamesetItemChanged(data=null) {
-    sendToGameshell({type: 'gamesetItemChanged', data: data});
-}
-
-/**
- * Sends back the game state which consists of all
- * information necessary to rebuilt the current game in another instance
- * 
- * @param {*} gameState Game state information
- */
-function sendGameState(gameState) {
-    sendToGameshell({type: 'gameState', data: gameState});
-}
-
-/**
- * Sends back a confirmation that the student(s) information has been set
- * 
- * @param {*} students Student(s) information: list of {id, name, controlsEnabled}
- */
-function sendStudentsSet(students) {
-    sendToGameshell({type: 'studentsSet', data: students});
-}
-
-/**
- * Sends back a confirmation that the selected student object has been set
- * 
- * @param {*} selectedStudent Student object {id, name, controlsEnabled}
- */
-function sendSelectedStudentSet(selectedStudent) {
-    sendToGameshell({type: 'selectedStudentSet', data: selectedStudent});
-}
-
-/**
- * Sends back confirmation the student controls has been updated (enabled/disabled))
- * 
- * @param {*} student Student object {id, name, controlsEnabled}
- */
-function sendStudentControlsUpdated(student) {
-    sendToGameshell({type: 'studentControlsUpdated', data: student});
-}
 
 /**
  * Communication with the Gameshell happens through the 'message' event
  * on the Window element. All communication will be received and handled here.
  */
 bindEvent(window, 'message', function (e) {
-    if (String(e.data).search('"tinyeye":true') >= 0) {
-        e = JSON.parse(e.data);
-        
-        // for debugging purposes
-        if (GAME_DEBUG) {
-            console.log("Game Receiving: " + e.type);
-            console.log("Data:");
-            console.log(e.data);
-        }
+    // filter out messages that are not coming from the gameshell
+    if (String(e.data).search('"tinyeye":true') < 0) return;
 
-        switch (e.type) {
-            case 'startGame':
-                startGameHook(e.data, e.eventInitiator);
-                break;
+    e = JSON.parse(e.data);
+    logMessage("Receiving From Gameshell", e);
 
-            case 'endGame':
-                endGameHook(e.data, e.eventInitiator);
-                break;
+    // all event types in the following switch statement are initiated in the Therapist's Gameshell
+    // except for the 'gameMessage' which is initiated from any other game instance
+    //
+    // To send a message to other game instances, send a 'sentToPlayers' or 'sendToAll' message to the gameshell.
+    // The gameshell will in turn forward the message to the intended players
 
-            case 'changeTheme':
-                changeThemeHook(e.data, e.eventInitiator);
-                break;
+    switch (e.type) {
+        case 'startGame':
+            startGameHook();
+            break;
 
-            case 'changeGameset':
-                changeGamesetHook(e.data, e.eventInitiator);
-                break;
+        case 'setTheme':
+            setThemeHook(e.data);
+            break;
 
-            case 'changeToPreviousGamesetItem':
-                changeGamesetItemHook('previous', e.data, e.eventInitiator);
-                break;
+        case 'setGameset':
+            setGamesetHook(e.data);
+            break;
 
-            case 'changeToNextGamesetItem':
-                changeGamesetItemHook('next', e.data, e.eventInitiator);
-                break;
+        case 'setPreviousGamesetCard':
+            setGamesetItemHook('previous');
+            break;
 
-            case 'gameMessage':
-                handleGameMessageHook(e.data);
-                break;
+        case 'setNextGamesetCard':
+            setGamesetItemHook('next');
+            break;
 
-            case 'getGameState':
-                getGameStateHook();
-                break;
+        case 'endGame':
+            endGameHook();
+            break;
 
-            case 'setGameState':
-                setGameStateHook(e.data);
-                break;
+        case 'gameMessage':
+            handleGameMessageHook(e.data);
+            break;
 
-            case 'setGameshellInfo':
-                setGameshellInfoHook(e.data);
-                break;
+        case 'setGameshellInfo':
+            setGameshellInfoHook(e.data);
+            break;
 
-            case 'setStudents':
-                setStudentsHook(e.data, e.eventInitiator);
-                break;
+        case 'setPlayers':
+            setPlayersHook(e.data);
+            break;
 
-            case 'setSelectedStudent':
-                setSelectedStudentHook(e.data, e.eventInitiator);
-                break;
+        case 'setCurrentPlayer':
+            setCurrentPlayerHook(e.data);
+            break;
 
-            case 'updateStudentControls':
-                updateStudentControlsHook(e.data, e.eventInitiator);
-                break;
-        }
+        case 'updatePlayerControls':
+            updatePlayerControlsHook(e.data);
+            break;
     }
 });
