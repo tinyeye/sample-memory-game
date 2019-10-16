@@ -580,7 +580,7 @@ function setGameshellInfoHook(gameshellInfo) {
   
   // hide the start/restart buttons if this was a player
   // 2 is Therapist UserType
-  if (userType == 2) {
+  if (userType != 1 && userType != 3) {
     $('#uiStartGame').show();
     $('#uiRestartGame').show();
   } else {
