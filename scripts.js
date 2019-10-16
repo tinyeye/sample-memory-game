@@ -39,7 +39,8 @@ let currentTheme = themes['default'];
 let lockBoard = false;
 let firstCard, secondCard;
 let matchesFound = 0;
-let userType = 'player';
+// 1 is student userType
+let userType = 1;
 
 let players = {};
 let playerScores = {};
@@ -578,7 +579,8 @@ function setGameshellInfoHook(gameshellInfo) {
   userType = gameshellInfo.userType;
   
   // hide the start/restart buttons if this was a player
-  if (userType == 'Therapist') {
+  // 2 is Therapist UserType
+  if (userType == 2) {
     $('#uiStartGame').show();
     $('#uiRestartGame').show();
   } else {
