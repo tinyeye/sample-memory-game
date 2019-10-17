@@ -277,7 +277,7 @@ function disableCards() {
 
   // add a score to current selected player
   if (currentPlayer) {
-    playerScores[currentPlayer.id]++;
+    playerScores[currentPlayer.personId]++;
   }
   // update the scores
   updateScores();
@@ -363,12 +363,12 @@ function updateCurrentPlayer(player) {
   // if we already have a selected player
   if (currentPlayer) {
     // clear it's style
-    $('#player' + currentPlayer.id).css('font-weight', '');
+    $('#player' + currentPlayer.personId).css('font-weight', '');
   }
 
   currentPlayer = player;
   if (currentPlayer) {
-    $('#player' + player.id).css('font-weight', 'bold');
+    $('#player' + player.personId).css('font-weight', 'bold');
   }
 }
 
@@ -380,14 +380,14 @@ function updateCurrentPlayer(player) {
 function updatePlayerControls(player) {
   if (!player) return;
 
-  if (currentPlayer && currentPlayer.id == player.id) {
+  if (currentPlayer && currentPlayer.personId == player.personId) {
     currentPlayer.controlsEnabled = player.controlsEnabled;
   }
 
   if (player.controlsEnabled) {
-    $('#playerspan' + player.id + '> img').remove();
+    $('#playerspan' + player.personId + '> img').remove();
   } else {
-    $('#playerspan' + player.id).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
+    $('#playerspan' + player.personId).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
   }
 }
 
@@ -417,7 +417,7 @@ function setPlayers(allPlayers) {
   players = {};
   for (var player of allPlayers) {
     // add them to the players list
-    players[player.id] = player;
+    players[player.personId] = player;
   }
 
   updatePlayers();
@@ -443,7 +443,7 @@ function endGameHandler() {
 
 function cardClickHandler() {
   // if this game instance is controlled by player(s), then only selected and controls-enabled player is allowed to click
-  if (!currentPlayer.controlsEnabled || !localPlayerIds.includes(currentPlayer.id)) return;
+  if (!currentPlayer.controlsEnabled || !localPlayerIds.includes(currentPlayer.personId)) return;
   // grab the card being flipped
   var elCard = $(this);
   // handle card flipping/unflipping...etc
@@ -590,9 +590,9 @@ function setGameshellInfoHook(gameshellInfo) {
 
   // grab the user(s) playing this game on the current computer
   for (var player of gameshellInfo.players) {
-    players[player.id] = player;
+    players[player.personId] = player;
     // these are the local players, grab their ids
-    localPlayerIds.push(player.id);
+    localPlayerIds.push(player.personId);
   }
   
   currentPlayer = gameshellInfo.currentPlayer;
@@ -707,9 +707,9 @@ function setPlayersHook(allPlayers) {
   var newPlayerIds = [];
   // loop over incoming players
   for (var player of allPlayers) {
-    if (!players.hasOwnProperty(player.id)) {
+    if (!players.hasOwnProperty(player.personId)) {
       // grab the list of ids of newly joined players
-      newPlayerIds.push(player.id);
+      newPlayerIds.push(player.personId);
     }
   }
 
