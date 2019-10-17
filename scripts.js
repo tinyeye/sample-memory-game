@@ -236,8 +236,10 @@ function endGame() {
 function flipCard(card) {
   // if the board is locked, return
   if (lockBoard) return;
+  // if no card return
+  if (!card) return;
   // if we are clicking the same first flipped card, return
-  if (card === firstCard) return;
+  if (firstCard && (card.css('order') === firstCard.css('order'))) return;
 
   // otherwise, flip the card
   card.addClass('flip');
