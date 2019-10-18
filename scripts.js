@@ -848,7 +848,7 @@ function handleGameMessageHook(messageInfo) {
       break;
 
     case 'flipCard':
-      if (data.loggedInPersonId === data.senderPersonId) return;
+      if (messageInfo.loggedInPersonId === messageInfo.senderPersonId) return;
       $('.memory-card').each((index, value) => {
         var elCard = $(value);
 
