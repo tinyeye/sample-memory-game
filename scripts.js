@@ -773,7 +773,87 @@ function updatePlayerControlsHook(player) {
 }
 
 /**
- * Handles messages sent by other game instances
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} message Player object {id, name, controlsEnabled}
+ */
+function requestGameStatusHook(message) {
+  // updatePlayerControls(player);
+  console.log('requestGameStatus');
+  console.log(message);
+
+  // inform other game instances
+  // sendToGameshell({
+  //   type: 'sendToAll',
+  //   data: {
+  //     message: 'requestGameStatus',
+  //     data: message 
+  //   }
+  // });
+}
+
+/**
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} message Player object {id, name, controlsEnabled}
+ */
+function userJoined(message) {
+  // updatePlayerControls(player);
+  console.log('userJoined');
+  console.log(message);
+
+  // inform other game instances
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'userJoined',
+      data: message 
+    }
+  });
+}
+
+/**
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} message Player object {id, name, controlsEnabled}
+ */
+function pauseGame(message) {
+  // updatePlayerControls(player);
+  console.log('pauseGame');
+  console.log(message);
+
+  // inform other game instances
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'pauseGame',
+      data: message 
+    }
+  });
+}
+
+/**
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} message Player object {id, name, controlsEnabled}
+ */
+function userLeft(message) {
+  // updatePlayerControls(player);
+  console.log('userLeft');
+  console.log(message);
+
+  // inform other game instances
+  sendToGameshell({
+    type: 'sendToAll',
+    data: {
+      message: 'userLeft',
+      data: message 
+    }
+  });
+}
+
+/**
+ * Handles messages sent by other game instances or by the gameshell
  * 
  * @param {*} messageInfo Data object containing a 'message' and it's associated 'data'
  */
@@ -789,6 +869,9 @@ function handleGameMessageHook(messageInfo) {
   var message = messageInfo.message;
   var data = messageInfo.data;
   switch (message) {
+    /*
+    * The following required methods enable the Gameshell to appropriately interact with the game.
+    */
     case 'startGame':
       startGame(data);
       break;
@@ -846,6 +929,19 @@ function handleGameMessageHook(messageInfo) {
     case 'updatePlayerControls':
       updatePlayerControls(data);
       break;
+
+    case 'userJoined':
+        userJoined(e.data);
+        break;
+
+    case 'pauseGame':
+        pauseGame(e.data);
+        break;
+
+    case 'userLeft':
+        userLeft(e.data);
+        break;
+
 
     case 'flipCard':
       if (data.loggedInPersonId === data.senderPersonId) return;

@@ -161,5 +161,10 @@ bindEvent(window, 'message', function (e) {
         case 'updatePlayerControls':
             updatePlayerControlsHook(e.data);
             break;
+
+        case 'requestGameStatus':
+            requestGameStatusHook(e.data);
+            break;
+
     }
 });

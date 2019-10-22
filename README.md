@@ -59,7 +59,7 @@ The second step is to interact with the GameShell through the functionality prov
 
     `playerIds` - A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
 
-    `data` - A `GameInfo` object when the message type is `gameReady`. A `player` object - `{id, name, controlsEnabled}` - when the message type is `currentPlayerChanged`. Any other object otherwise.
+    `data` - A `GameInfo` object when the message type is `gameReady`. A `player` object - `{id, name, controlsEnabled, gameMaster}` - when the message type is `currentPlayerChanged`. Any other object otherwise.
 
 1. __Handling Gameshell Messages__
 
@@ -92,7 +92,7 @@ The second step is to interact with the GameShell through the functionality prov
     * __`setPlayers`__
     Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
     ```
-    [{id, name, controlsEnabled}]
+    [{id, name, controlsEnabled, gameMaster}]
     ```
 
     * __`setCurrentPlayer`__
@@ -111,7 +111,7 @@ The second step is to interact with the GameShell through the functionality prov
     {
       userType: 'Therapist'|'Student'|'2Students',
       players: [{id, name, controlsEnabled}],
-      currentPlayer: {id, name, controlsEnabled}
+      currentPlayer: {id, name, controlsEnabled, gameMaster}
     }
     ```
 
