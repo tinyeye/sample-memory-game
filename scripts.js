@@ -792,7 +792,7 @@ function updatePlayerControlsHook(player) {
 //       playerIds: [messgae.person_id]
 //     }
 //   });
-}
+// }
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
