@@ -777,19 +777,21 @@ function updatePlayerControlsHook(player) {
  * 
  * @param {*} message Player object {id, name, controlsEnabled}
  */
-function requestGameStatusHook(message) {
-  // updatePlayerControls(player);
-  console.log('requestGameStatus');
-  console.log(message);
+// function requestGameStatusHook(message) {
+//   // updatePlayerControls(player);
+//   console.log('requestGameStatus');
+//   console.log(message);
+//   gameState = getGameState();
 
-  // inform other game instances
-  // sendToGameshell({
-  //   type: 'sendToAll',
-  //   data: {
-  //     message: 'requestGameStatus',
-  //     data: message 
-  //   }
-  // });
+//   // inform other game instances
+//   sendToGameshell({
+//     type: 'sendToPlayers',
+//     data: {
+//       message: 'requestGameStatus',
+//       data: gameState, 
+//       playerIds: [messgae.person_id]
+//     }
+//   });
 }
 
 /**
@@ -830,6 +832,26 @@ function pauseGame(message) {
       data: message 
     }
   });
+}
+
+/**
+ * Updates the controls of the player (by enabling/disabling them)
+ * 
+ * @param {*} message Player object {id, name, controlsEnabled}
+ */
+function playersOnline(message) {
+  // updatePlayerControls(player);
+  console.log('playersOnline');
+  console.log(message);
+
+  // inform other game instances
+  // sendToGameshell({
+  //   type: 'sendToAll',
+  //   data: {
+  //     message: 'pauseGame',
+  //     data: message 
+  //   }
+  // });
 }
 
 /**
@@ -942,6 +964,9 @@ function handleGameMessageHook(messageInfo) {
         userLeft(e.data);
         break;
 
+    case 'playersOnline'
+      playersOnline(e.data);
+      break;
 
     case 'flipCard':
       if (messageInfo.loggedInPersonId === messageInfo.senderPersonId) return;
@@ -954,6 +979,12 @@ function handleGameMessageHook(messageInfo) {
         }
       });
       break;
+    
+    // case 'getGameState':
+    //   // let gameState = getGameState();
+    //   sendGameState(e.data)
+    //   break;
+
   }
 }
 

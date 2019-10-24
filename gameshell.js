@@ -162,9 +162,9 @@ bindEvent(window, 'message', function (e) {
             updatePlayerControlsHook(e.data);
             break;
 
-        case 'requestGameStatus':
-            requestGameStatusHook(e.data);
-            break;
+        // case 'requestGameStatus':
+        //     requestGameStatusHook(e.data);
+        //     break;
 
     }
 });
