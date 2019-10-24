@@ -594,7 +594,9 @@ function setGameshellInfoHook(gameshellInfo) {
   for (var player of gameshellInfo.players) {
     players[player.personId] = player;
     // these are the local players, grab their ids
-    localPlayerIds.push(player.personId);
+    if (player.isLocal) {
+      localPlayerIds.push(player.personId);
+    }
   }
   
   currentPlayer = gameshellInfo.currentPlayer;
@@ -840,9 +842,7 @@ function pauseGame(message) {
  * @param {*} personIds number array of person ids
  */
 function playersOnline(personIds) {
-  // updatePlayerControls(player);
   console.log('playersOnline');
-
   console.log(personIds);
   for (personId of personIds) {
     if (players[personId]) {
@@ -853,6 +853,22 @@ function playersOnline(personIds) {
     }
   }
 
+/**
+ * list of players that went offline
+ * 
+ * @param {*} personIds number array of person ids
+ */
+function playersOffline(personIds) {
+  console.log('playersOffline');
+  console.log(personIds);
+  for (personId of personIds) {
+    if (players[personId]) {
+      players[personId].isOnline = false;
+    }
+    if (currentPlayer && currentPlayer.personId == personId) {
+      currentPlayer.isOnline = false;
+    }
+  }
 
   // inform other game instances
   // sendToGameshell({
@@ -976,6 +992,10 @@ function handleGameMessageHook(messageInfo) {
 
     case 'playersOnline':
       playersOnline(data);
+      break;
+
+    case 'playersOffline':
+      playersOffline(data);
       break;
 
     case 'flipCard':
