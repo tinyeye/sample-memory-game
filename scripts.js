@@ -852,6 +852,7 @@ function playersOnline(personIds) {
       currentPlayer.isOnline = true;
     }
   }
+}
 
 /**
  * list of players that went offline
