@@ -835,14 +835,22 @@ function pauseGame(message) {
 }
 
 /**
- * Updates the controls of the player (by enabling/disabling them)
+ * list of players that current went online
  * 
- * @param {*} message Player object {id, name, controlsEnabled}
+ * @param {*} personIds number array of person ids
  */
-function playersOnline(message) {
+function playersOnline(personIds) {
   // updatePlayerControls(player);
   console.log('playersOnline');
+
   console.log(message);
+  for (personId of personIds) {
+    players[personId].isOnline = true;
+    if (currentPlayer.id === personId) {
+      currentPlayer.isOnline = true;
+    }
+  }
+
 
   // inform other game instances
   // sendToGameshell({
