@@ -843,7 +843,7 @@ function playersOnline(personIds) {
   // updatePlayerControls(player);
   console.log('playersOnline');
 
-  console.log(message);
+  console.log(personIds);
   for (personId of personIds) {
     players[personId].isOnline = true;
     if (currentPlayer.id === personId) {
