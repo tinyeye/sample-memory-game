@@ -965,7 +965,7 @@ function handleGameMessageHook(messageInfo) {
         break;
 
     case 'playersOnline':
-      playersOnline(e.data);
+      playersOnline(data);
       break;
 
     case 'flipCard':
