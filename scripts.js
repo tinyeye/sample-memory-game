@@ -964,7 +964,7 @@ function handleGameMessageHook(messageInfo) {
         userLeft(e.data);
         break;
 
-    case 'playersOnline'
+    case 'playersOnline':
       playersOnline(e.data);
       break;
 
