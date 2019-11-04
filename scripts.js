@@ -585,7 +585,7 @@ function startGameHook() {
     type: 'sendToAll',
     data: {
       message: 'startGame',
-      data: {cards: cardsOrder, startingPlayerId: currentPlayer.personId}
+      data: {cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId}
     }
   });
 }
