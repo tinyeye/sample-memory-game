@@ -375,6 +375,19 @@ function updateCurrentPlayer(player) {
 }
 
 /**
+ * Updates the selected player who is allowed to play the game
+ * 
+ * @param {*} localPlayerIds The current selected player
+ */
+function setLocalPlayers(localPlayerIds) {
+  for (localPlayerId in localPlayerIds) {
+    if (players[localPlayerId]) {
+      players[localPlayerIds].isLocal = true;
+    }
+  }
+}
+
+/**
  * Updates the player controls' enabled/disabled flag in the game
  * 
  * @param {*} player The player object
@@ -852,7 +865,30 @@ function playersOnline(personIds) {
       currentPlayer.isOnline = true;
     }
   }
+  if (isGameMaster()) {
+    gameState = getGameState()
+
+  }
 }
+
+/**
+ * Returns true if any of the local players are the gamemaster
+ * 
+ */
+function isGameMaster() {
+  console.log('isGameMaster');
+  gamemaster = getGamemaster();
+  return localPlayerIds.includes(gamemaster.personId)
+}
+
+function getGamemaster() {
+  for (var playerId in players) {
+    if (players[playerId].gamemaster) {
+      return players[playerId];
+    }
+  }
+}
+
 
 /**
  * list of players that went offline
@@ -969,6 +1005,9 @@ function handleGameMessageHook(messageInfo) {
         // set the players
         setPlayers(data.players);
       }
+      break;
+    case 'setLocalPlayers':
+      setLocalPlayers(data);
       break;
 
     case 'updateCurrentPlayer':
