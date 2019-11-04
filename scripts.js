@@ -190,7 +190,7 @@ function createGameCards() {
  * Starts/Restarts a new game
  * Advances the game from the intro screen into the game area
  */
-function startGame(order=null) {
+function startGame(order=null, startingPlayerId=null) {
   // if we have an incoming card order list
   if (order) {
     // use it to start our game
@@ -198,6 +198,9 @@ function startGame(order=null) {
   } else {
     // otherwise, shuffle the built-in card order list
     shuffleList(cardsOrder);
+  }
+  if (startingPlayerId) {
+    currentPlayer = players[startingPlayerId]
   }
   
   // reset # of found matches
@@ -527,7 +530,7 @@ function setGameState(gameState) {
 
   // start/restart the game
   if (gameState.isGameStarted) {
-    startGame(gameState.cardsOrder);
+    startGame(gameState.cardsOrder, currentPlayer);
   
     // flip cards to match already running game's state
     $('.memory-card').each((index, value) => {
@@ -574,12 +577,13 @@ function startGameHook() {
   // start/restart the game
   startGame();
 
+
   // send message to all other games to start their game
   sendToGameshell({
     type: 'sendToAll',
     data: {
       message: 'startGame',
-      data: cardsOrder
+      data: {cards: cardsOrder, startingPlayerId: currentPlayer.personId}
     }
   });
 }
@@ -958,7 +962,7 @@ function handleGameMessageHook(messageInfo) {
     * The following required methods enable the Gameshell to appropriately interact with the game.
     */
     case 'startGame':
-      startGame(data);
+      startGame(data.cardsOrder, data.startingPlayerId);
       break;
 
     case 'setTheme':
@@ -966,7 +970,7 @@ function handleGameMessageHook(messageInfo) {
       // if the game had already started before updating the theme
       if (isGameStarted()) {
         // then restart the game
-        startGame(data.cardsOrder);
+        startGame(data.cardsOrder, currentPlayer.personId);
       }
       break;
 
@@ -975,7 +979,7 @@ function handleGameMessageHook(messageInfo) {
       // if the game had already started before updating the gameset
       if (isGameStarted()) {
         // then restart the game
-        startGame(data.cardsOrder);
+        startGame(data.cardsOrder, currentPlayer.personId);
       }
       break;
 
