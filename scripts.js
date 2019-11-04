@@ -380,12 +380,14 @@ function updateCurrentPlayer(player) {
 /**
  * Updates the selected player who is allowed to play the game
  * 
- * @param {*} localPlayerIds The current selected player
+ * @param {*} playerIds The current selected player
  */
-function setLocalPlayers(localPlayerIds) {
-  for (localPlayerId in localPlayerIds) {
+function setLocalPlayers(playerIds) {
+  for (let localPlayerId of playerIds) {
     if (players[localPlayerId]) {
-      players[localPlayerIds].isLocal = true;
+      players[localPlayerId].isLocal = true;
+      players[localPlayerId].isOnline = true;
+      localPlayerIds.push(localPlayerId);
     }
   }
 }
@@ -873,6 +875,10 @@ function playersOnline(personIds) {
     gameState = getGameState()
 
   }
+  sendToGameshell({
+    type: 'setOnlinePlayers',
+    data: personIds
+  });
 }
 
 /**
