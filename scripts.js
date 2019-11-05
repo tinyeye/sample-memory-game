@@ -883,10 +883,10 @@ function playersOnline(personIds) {
     });
 
   }
-  sendToGameshell({
-    type: 'setOnlinePlayers',
-    data: personIds
-  });
+  // sendToGameshell({
+  //   type: 'setOnlinePlayers',
+  //   data: personIds
+  // });
 }
 
 /**
