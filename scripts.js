@@ -871,8 +871,16 @@ function playersOnline(personIds) {
       currentPlayer.isOnline = true;
     }
   }
-  if (isGameMaster()) {
+  if (isGameMaster() && isGameStarted()) {
     gameState = getGameState()
+    sendToGameshell({
+      type: 'sendToPlayers',
+      playerIds: personIds,
+      data: {
+        message: 'gameState',
+        data: gameState 
+      }
+    });
 
   }
   sendToGameshell({
