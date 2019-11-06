@@ -1056,6 +1056,10 @@ function handleGameMessageHook(messageInfo) {
       playersOffline(data);
       break;
 
+    case 'setGameState':
+      setGameState(data);
+      break;
+
     case 'flipCard':
       if (messageInfo.loggedInPersonId === messageInfo.senderPersonId) return;
       $('.memory-card').each((index, value) => {
