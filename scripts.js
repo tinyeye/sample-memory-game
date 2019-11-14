@@ -83,7 +83,7 @@ function initialized() {
   
   sendToGameshell({
     type: 'gameReady',
-    data: gi
+    message: gi
   });
 }
 
@@ -471,8 +471,8 @@ function cardClickHandler() {
   // send a gameMessage to other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'flipCard',
+    message: {
+      type: 'flipCard',
       data: elCard.css('order')
     }
   });
@@ -583,8 +583,8 @@ function startGameHook() {
   // send message to all other games to start their game
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'startGame',
+    message: {
+      type: 'startGame',
       data: {cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId}
     }
   });
@@ -645,8 +645,8 @@ function setThemeHook(theme) {
   // send message to all other games to change their themes
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'setTheme',
+    message: {
+      type: 'setTheme',
       data: {theme: theme, cardsOrder: cardsOrder}
     }
   });
@@ -671,8 +671,8 @@ function setGamesetHook(data) {
   // send message to all other games to change their themes
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'setGameset',
+    message: {
+      type: 'setGameset',
       data: {gameset: data, cardsOrder: cardsOrder}
     }
   });
@@ -695,8 +695,8 @@ function setGamesetItemHook(direction) {
   // once the gameset card is changed, send a message to all other game instances
   //sendToGameshell({
   //  type: 'sendToAll',
-  //  data: {
-  //    message: 'setGamesetItem',
+  //  message: {
+  //    type: 'setGamesetItem',
   //    data: {gamesetItem: card}
   //  }
   //});
@@ -714,8 +714,8 @@ function endGameHook() {
   // send message to all other games to start their game
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'endGame'
+    message: {
+      type: 'endGame'
     }
   });
 }
@@ -744,8 +744,8 @@ function setPlayersHook(allPlayers) {
   // and sending the gamestate to the new players
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'setPlayers',
+    message: {
+      type: 'setPlayers',
       data: {gameState: getGameState(), newPlayerIds: newPlayerIds, players: allPlayers}
     }
   });
@@ -762,8 +762,8 @@ function setCurrentPlayerHook(player) {
   // inform other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'updateCurrentPlayer',
+    message: {
+      type: 'updateCurrentPlayer',
       data: player
     }
   });
@@ -771,7 +771,7 @@ function setCurrentPlayerHook(player) {
   // inform Gameshell about player change
   sendToGameshell({
     type: 'setCurrentPlayer',
-    data: currentPlayer
+    message: currentPlayer
   });
 }
 
@@ -786,8 +786,8 @@ function updatePlayerControlsHook(player) {
   // inform other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'updatePlayerControls',
+    message: {
+      type: 'updatePlayerControls',
       data: player
     }
   });
@@ -828,8 +828,8 @@ function userJoined(message) {
   // inform other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'userJoined',
+    message: {
+      type: 'userJoined',
       data: message 
     }
   });
@@ -848,8 +848,8 @@ function pauseGame(message) {
   // inform other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'pauseGame',
+    message: {
+      type: 'pauseGame',
       data: message 
     }
   });
@@ -876,17 +876,13 @@ function playersOnline(personIds) {
     sendToGameshell({
       type: 'sendToPlayers',
       playerIds: personIds,
-      data: {
-        message: 'gameState',
+      message: {
+        type: 'gameState',
         data: gameState 
       }
     });
 
   }
-  // sendToGameshell({
-  //   type: 'setOnlinePlayers',
-  //   data: personIds
-  // });
 }
 
 /**
@@ -928,8 +924,8 @@ function playersOffline(personIds) {
   // inform other game instances
   // sendToGameshell({
   //   type: 'sendToAll',
-  //   data: {
-  //     message: 'pauseGame',
+  //   message: {
+  //     type: 'pauseGame',
   //     data: message 
   //   }
   // });
@@ -948,8 +944,8 @@ function userLeft(message) {
   // inform other game instances
   sendToGameshell({
     type: 'sendToAll',
-    data: {
-      message: 'userLeft',
+    message: {
+      type: 'userLeft',
       data: message 
     }
   });
@@ -958,20 +954,20 @@ function userLeft(message) {
 /**
  * Handles messages sent by other game instances or by the gameshell
  * 
- * @param {*} messageInfo Data object containing a 'message' and it's associated 'data'
+ * @param {*} message Data object containing a 'message' and it's associated 'data'
  */
-function handleGameMessageHook(messageInfo) {
+function handleGameMessageHook(message) {
 
   // if game is not ready yet
   if (!isGameReady) {
     // then store the message in a queue
-    messageQueue.push(messageInfo);
+    messageQueue.push(message);
     return;
   }
 
-  var message = messageInfo.message;
-  var data = messageInfo.data;
-  switch (message) {
+  var messageType = message.type;
+  var data = message.data;
+  switch (messageType) {
     /*
     * The following required methods enable the Gameshell to appropriately interact with the game.
     */
@@ -1061,7 +1057,7 @@ function handleGameMessageHook(messageInfo) {
       break;
 
     case 'flipCard':
-      if (messageInfo.loggedInPersonId === messageInfo.senderPersonId) return;
+      if (message.loggedInPersonId === message.senderPersonId) return;
       $('.memory-card').each((index, value) => {
         var elCard = $(value);
 
@@ -1071,18 +1067,12 @@ function handleGameMessageHook(messageInfo) {
         }
       });
       break;
-    
-    // case 'getGameState':
-    //   // let gameState = getGameState();
-    //   sendGameState(e.data)
-    //   break;
-
   }
 }
 
 function handleMessageQueue() {
-  for (var messageInfo of messageQueue) {
-    handleGameMessageHook(messageInfo);
+  for (var message of messageQueue) {
+    handleGameMessageHook(message);
   }
   messageQueue = [];
 }
