@@ -86,7 +86,7 @@ function logMessage(text, data=null) {
  */
 function sendToGameshell({eventType, playerIds=null, message=null}) {
 
-    logMessage('Sending To Gameshell', {type: type, playerIds: playerIds, message: message});
+    logMessage('Sending To Gameshell', {eventType: eventType, playerIds: playerIds, message: message});
 
     // send a message to parent window that this document is ready
     if (window && window.parent) {
