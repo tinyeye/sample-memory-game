@@ -82,7 +82,7 @@ function initialized() {
   gi.minimumGamesetCardsAllowed = 6;
   
   sendToGameshell({
-    type: 'gameReady',
+    eventType: 'gameReady',
     message: gi
   });
 }
@@ -470,7 +470,7 @@ function cardClickHandler() {
   flipCard(elCard);
   // send a gameMessage to other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'flipCard',
       data: elCard.css('order')
@@ -582,7 +582,7 @@ function startGameHook() {
 
   // send message to all other games to start their game
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'startGame',
       data: {cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId}
@@ -644,7 +644,7 @@ function setThemeHook(theme) {
 
   // send message to all other games to change their themes
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'setTheme',
       data: {theme: theme, cardsOrder: cardsOrder}
@@ -670,7 +670,7 @@ function setGamesetHook(data) {
 
   // send message to all other games to change their themes
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'setGameset',
       data: {gameset: data, cardsOrder: cardsOrder}
@@ -694,7 +694,7 @@ function setGamesetItemHook(direction) {
 
   // once the gameset card is changed, send a message to all other game instances
   //sendToGameshell({
-  //  type: 'sendToAll',
+  //  eventType: 'sendToAll',
   //  message: {
   //    type: 'setGamesetItem',
   //    data: {gamesetItem: card}
@@ -713,7 +713,7 @@ function endGameHook() {
 
   // send message to all other games to start their game
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'endGame'
     }
@@ -743,7 +743,7 @@ function setPlayersHook(allPlayers) {
   // informing them of the new players
   // and sending the gamestate to the new players
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'setPlayers',
       data: {gameState: getGameState(), newPlayerIds: newPlayerIds, players: allPlayers}
@@ -761,7 +761,7 @@ function setCurrentPlayerHook(player) {
 
   // inform other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'updateCurrentPlayer',
       data: player
@@ -770,7 +770,7 @@ function setCurrentPlayerHook(player) {
 
   // inform Gameshell about player change
   sendToGameshell({
-    type: 'setCurrentPlayer',
+    eventType: 'setCurrentPlayer',
     message: currentPlayer
   });
 }
@@ -785,7 +785,7 @@ function updatePlayerControlsHook(player) {
 
   // inform other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'updatePlayerControls',
       data: player
@@ -806,7 +806,7 @@ function updatePlayerControlsHook(player) {
 
 //   // inform other game instances
 //   sendToGameshell({
-//     type: 'sendToPlayers',
+//     eventType: 'sendToPlayers',
 //     data: {
 //       message: 'requestGameStatus',
 //       data: gameState, 
@@ -827,7 +827,7 @@ function userJoined(message) {
 
   // inform other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'userJoined',
       data: message 
@@ -847,7 +847,7 @@ function pauseGame(message) {
 
   // inform other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'pauseGame',
       data: message 
@@ -874,7 +874,7 @@ function playersOnline(personIds) {
   if (isGameMaster() && isGameStarted()) {
     gameState = getGameState()
     sendToGameshell({
-      type: 'sendToPlayers',
+      eventType: 'sendToPlayers',
       playerIds: personIds,
       message: {
         type: 'gameState',
@@ -923,7 +923,7 @@ function playersOffline(personIds) {
 
   // inform other game instances
   // sendToGameshell({
-  //   type: 'sendToAll',
+  //   eventType: 'sendToAll',
   //   message: {
   //     type: 'pauseGame',
   //     data: message 
@@ -943,7 +943,7 @@ function userLeft(message) {
 
   // inform other game instances
   sendToGameshell({
-    type: 'sendToAll',
+    eventType: 'sendToAll',
     message: {
       type: 'userLeft',
       data: message 

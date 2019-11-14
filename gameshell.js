@@ -84,7 +84,7 @@ function logMessage(text, data=null) {
  * @param {string} type type of event
  * @param {object} message message associated with this type of event
  */
-function sendToGameshell({type, playerIds=null, message=null}) {
+function sendToGameshell({eventType, playerIds=null, message=null}) {
 
     logMessage('Sending To Gameshell', {type: type, playerIds: playerIds, message: message});
 
@@ -92,7 +92,7 @@ function sendToGameshell({type, playerIds=null, message=null}) {
     if (window && window.parent) {
         window.parent.postMessage(JSON.stringify({
             tinyeye: true,    // REQUIRED - important for filtering Gameshell messages
-            type: type,
+            eventType: eventType,
             playerIds: playerIds,
             message: message 
         }), '*');
