@@ -82,11 +82,11 @@ function logMessage(text, data=null) {
  * Sends an event to the Gameshell
  * 
  * @param {string} type type of event
- * @param {object} data data associated with this type of event
+ * @param {object} message message associated with this type of event
  */
-function sendToGameshell({type, playerIds=null, data=null}) {
+function sendToGameshell({type, playerIds=null, message=null}) {
 
-    logMessage('Sending To Gameshell', {type: type, playerIds: playerIds, data: data});
+    logMessage('Sending To Gameshell', {type: type, playerIds: playerIds, message: message});
 
     // send a message to parent window that this document is ready
     if (window && window.parent) {
@@ -94,7 +94,7 @@ function sendToGameshell({type, playerIds=null, data=null}) {
             tinyeye: true,    // REQUIRED - important for filtering Gameshell messages
             type: type,
             playerIds: playerIds,
-            data: data
+            message: message 
         }), '*');
     }
 }
