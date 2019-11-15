@@ -41,6 +41,22 @@ class GameInfo {
     }
 }
 
+class GameshellGameMessage {
+    constructor({ type, data=null }) {
+        this.type = type;
+        this.data= data;
+    }
+}
+
+class GameGameshellMessage {
+    constructor({ tinyeye, eventType, message, playerIds = null }) {
+        this.tinyeye = tinyeye;
+        this.eventType = eventType;
+        this.message = message;
+        this.playerIds= playerIds;
+    }
+}
+
 // ===========================================================================
 // Functions
 // ===========================================================================
@@ -87,15 +103,17 @@ function logMessage(text, data=null) {
 function sendToGameshell({eventType, playerIds=null, message=null}) {
 
     logMessage('Sending To Gameshell', {eventType: eventType, playerIds: playerIds, message: message});
+    var gameGameshellMessage = new GameGameshellMessage({
+      tinyeye: true, // REQUIRED - important for filtering Gameshell messages 
+      eventType: eventType,
+      message: message,
+      playerIds: playerIds
+    });
 
     // send a message to parent window that this document is ready
     if (window && window.parent) {
-        window.parent.postMessage(JSON.stringify({
-            tinyeye: true,    // REQUIRED - important for filtering Gameshell messages
-            eventType: eventType,
-            playerIds: playerIds,
-            message: message 
-        }), '*');
+        window.parent.postMessage(JSON.stringify(gameGameshellMessage), '*');
+        
     }
 }
 
