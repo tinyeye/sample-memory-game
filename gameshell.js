@@ -129,7 +129,8 @@ bindEvent(window, 'message', function (e) {
     // filter out messages that are not coming from the gameshell
     if (String(e.data).search('"tinyeye":true') < 0) return;
 
-    message = Object.assign(new GameshellGameMessage, JSON.parse(e.data));
+    // message = Object.assign(new GameshellGameMessage, JSON.parse(e.data));
+    message = JSON.parse(e.data);
     logMessage("Receiving From Gameshell", e);
 
     // all event types in the following switch statement are initiated in the Therapist's Gameshell
