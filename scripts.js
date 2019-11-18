@@ -74,7 +74,8 @@ function initialized() {
     width: 640,
     height: 640,
     autoScale: false,
-    isTurnTaking: true
+    isTurnTaking: true,
+    allowGameCardNavigation: false,
   });
 
   gi.themes = themeNames;
