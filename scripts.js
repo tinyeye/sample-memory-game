@@ -1032,17 +1032,17 @@ function handleGameMessageHook(message) {
       updatePlayerControls(data);
       break;
 
-    case 'userJoined':
-        userJoined(e.data);
-        break;
+    // case 'userJoined':
+    //     userJoined(e.data);
+    //     break;
 
     case 'pauseGame':
         pauseGame(e.data);
         break;
 
-    case 'userLeft':
-        userLeft(e.data);
-        break;
+    // case 'userLeft':
+    //     userLeft(e.data);
+    //     break;
 
     case 'playersOnline':
       playersOnline(data);

@@ -23,13 +23,15 @@ let SHOW_LOG_MESSAGES = true;
  *  gamesetsAllowed - indicates whether this game allows gamesets to be loaded
  *                    If not provided, the game is considered not to accept any gamesets
  * 
+ *  allowGameCardNavigation - whether or not the therapist will naviagate through the game cards of the gameset.
+ * 
  *  minimumGamesetCardsAllowed - minimum number of gameset cards required per gameset
  *                               If not provided and 'gamesetsAllowed' is true, then any number of gameset cards is allowed
  * 
  *  isTurnTaking - indicates whether this game has turns or not
  */
 class GameInfo {
-    constructor({ name, width, height, autoScale=true, isTurnTaking=false }) {
+    constructor({ name, width, height, autoScale=true, isTurnTaking=false, allowGameCardNavigation=false }) {
         this.name = name;
         this.width = width;
         this.height = height;
@@ -38,6 +40,7 @@ class GameInfo {
         this.gamesetsAllowed = false;
         this.minimumGamesetCardsAllowed = 0;
         this.isTurnTaking = isTurnTaking;
+        this.allowGameCardNavigation = allowGameCardNavigation;
     }
 }
 
@@ -97,7 +100,7 @@ function logMessage(text, data=null) {
 /**
  * Sends an event to the Gameshell
  * 
- * @param {string} type type of event
+ * @param {string} eventType type of event
  * @param {object} message message associated with this type of event
  */
 function sendToGameshell({eventType, playerIds=null, message=null}) {
@@ -126,26 +129,26 @@ bindEvent(window, 'message', function (e) {
     // filter out messages that are not coming from the gameshell
     if (String(e.data).search('"tinyeye":true') < 0) return;
 
-    e = JSON.parse(e.data);
+    message = Object.assign(new GameshellGameMessage, JSON.parse(e.data));
     logMessage("Receiving From Gameshell", e);
 
     // all event types in the following switch statement are initiated in the Therapist's Gameshell
-    // except for the 'gameMessage' which is initiated from any other game instance
+    // except for the 'gameMessage' which is initiated from any other game instance but passed through via the therapist gameshell
     //
     // To send a message to other game instances, send a 'sentToPlayers' or 'sendToAll' message to the gameshell.
     // The gameshell will in turn forward the message to the intended players
 
-    switch (e.type) {
+    switch (message.type) {
         case 'startGame':
             startGameHook();
             break;
 
         case 'setTheme':
-            setThemeHook(e.data);
+            setThemeHook(message.data);
             break;
 
         case 'setGameset':
-            setGamesetHook(e.data);
+            setGamesetHook(message.data);
             break;
 
         case 'setPreviousGamesetCard':
@@ -161,28 +164,24 @@ bindEvent(window, 'message', function (e) {
             break;
 
         case 'gameMessage':
-            handleGameMessageHook(e.data);
+            handleGameMessageHook(message.data);
             break;
 
         case 'setGameshellInfo':
-            setGameshellInfoHook(e.data);
+            setGameshellInfoHook(message.data);
             break;
 
         case 'setPlayers':
-            setPlayersHook(e.data);
+            setPlayersHook(message.data);
             break;
 
         case 'setCurrentPlayer':
-            setCurrentPlayerHook(e.data);
+            setCurrentPlayerHook(message.data);
             break;
 
         case 'updatePlayerControls':
-            updatePlayerControlsHook(e.data);
+            updatePlayerControlsHook(message.data);
             break;
-
-        // case 'requestGameStatus':
-        //     requestGameStatusHook(e.data);
-        //     break;
 
     }
 });
