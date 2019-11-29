@@ -2,30 +2,74 @@ $(document).ready(initialized);
 
 // theme can be chosen from this list
 let themes = {
-  'default':  {
-    backImage: './assets/js-badge.svg',
-    backAlt: 'JS Badge',
-    cardBackgroundColor: 'lightgreen',
-    gameBackgroundColor: 'darkolivegreen',
-    playerNamesColor: '#000000'
+  default: {
+    backImage: "./assets/js-badge.svg",
+    backAlt: "JS Badge",
+    cardBackgroundColor: "lightgreen",
+    gameBackgroundColor: "darkolivegreen",
+    playerNamesColor: "#000000"
   },
-  'tinyeye': {
-    backImage: './assets/te-butterfly.png',
-    backAlt: 'TE Butterfly',
-    cardBackgroundColor: '#1C7CCC',
-    gameBackgroundColor: '#060AB2',
-    playerNamesColor: '#FFFFFF'
+  tinyeye: {
+    backImage: "./assets/te-butterfly.png",
+    backAlt: "TE Butterfly",
+    cardBackgroundColor: "#1C7CCC",
+    gameBackgroundColor: "#060AB2",
+    playerNamesColor: "#FFFFFF"
   }
 };
 
 // Gameset images can be updated in this list
+// MemoryCard{
+//   id: card.id,
+//   frontImage: card.file.url,
+//   frontAlt: card.label,
+//   order: card.order,
+//   status: card.status[0].label
+// };
+
 let memoryCards = [
-  {id: 'aurelia', frontImage: './assets/aurelia.svg', frontAlt: 'Aurelia'},
-  {id: 'vue', frontImage: './assets/vue.svg', frontAlt: 'Vue'},
-  {id: 'angular', frontImage: './assets/angular.svg', frontAlt: 'Angular'},
-  {id: 'ember', frontImage: './assets/ember.svg', frontAlt: 'Ember'},
-  {id: 'backbone', frontImage: './assets/backbone.svg', frontAlt: 'Backbone'},
-  {id: 'react', frontImage: './assets/react.svg', frontAlt: 'React'}
+  {
+    id: 1,
+    frontImage: "./assets/aurelia.svg",
+    frontAlt: "Aurelia",
+    order: 1,
+    status: "Confirmed"
+  },
+  {
+    id: 2,
+    frontImage: "./assets/vue.svg",
+    frontAlt: "Vue",
+    order: 2,
+    status: "Confirmed"
+  },
+  {
+    id: 3,
+    frontImage: "./assets/angular.svg",
+    frontAlt: "Angular",
+    order: 3,
+    status: "Confirmed"
+  },
+  {
+    id: 4,
+    frontImage: "./assets/ember.svg",
+    frontAlt: "Ember",
+    order: 4,
+    status: "Confirmed"
+  },
+  {
+    id: 5,
+    frontImage: "./assets/backbone.svg",
+    frontAlt: "Backbone",
+    order: 5,
+    status: "Confirmed"
+  },
+  {
+    id: 6,
+    frontImage: "./assets/react.svg",
+    frontAlt: "React",
+    order: 6,
+    status: "Confirmed"
+  }
 ];
 
 let currentMemoryCards = memoryCards.slice(0);
@@ -34,8 +78,8 @@ let maxNumberOfUniqueCards = 6;
 let cardsOrder = [];
 
 // default variables
-let currentThemeName = 'default';
-let currentTheme = themes['default'];
+let currentThemeName = "default";
+let currentTheme = themes["default"];
 let lockBoard = false;
 let firstCard, secondCard;
 let matchesFound = 0;
@@ -51,39 +95,39 @@ let isGameReady = false;
 let messageQueue = [];
 
 function initialized() {
-  $('#uiStartGame').click(startGameHandler);
-  $('#uiRestartGame').click(startGameHandler);
+  $("#uiStartGame").click(startGameHandler);
+  $("#uiRestartGame").click(startGameHandler);
 
   // preparing an array of card order from 0 to 'total number of cards'
   var totalCards = maxNumberOfUniqueCards * 2;
-  for(var i=1; i<=totalCards; i++) {
+  for (var i = 1; i <= totalCards; i++) {
     cardsOrder.push(i);
   }
 
   // prepare theme names available in the game
   let themeNames = [];
   for (var themeName in themes) {
-      themeNames.push(themeName);
+    themeNames.push(themeName);
   }
 
   // set the default theme
   setTheme();
 
   var gi = new GameInfo({
-    name: 'Memory Game',
+    name: "Memory Game",
     width: 640,
     height: 640,
     autoScale: false,
     isTurnTaking: true,
-    allowGameCardNavigation: false,
+    allowGameCardNavigation: false
   });
 
   gi.themes = themeNames;
   gi.gamesetsAllowed = true;
   gi.minimumGamesetCardsAllowed = 6;
-  
+
   sendToGameshell({
-    eventType: 'gameReady',
+    eventType: "gameReady",
     message: gi
   });
 }
@@ -92,13 +136,13 @@ function initialized() {
  * Sets the current theme for the game
  * @param {String} themeName the name of the theme to use
  */
-function setTheme(themeName='default') {
+function setTheme(themeName = "default") {
   currentThemeName = themeName;
   currentTheme = themes[themeName];
 
   // set the board's background color from the theme
-  $('body').css('background', currentTheme.gameBackgroundColor);
-  $('#uiPlayers').css('color', currentTheme.playerNamesColor);
+  $("body").css("background", currentTheme.gameBackgroundColor);
+  $("#uiPlayers").css("color", currentTheme.playerNamesColor);
 }
 
 /**
@@ -118,7 +162,13 @@ function setGameset(gameset) {
     // loop over incoming cards
     for (var card of gameset.cards) {
       // add each card into the current list
-      currentMemoryCards.push({id: card.id, frontImage: card.path, frontAlt: card.label});
+      currentMemoryCards.push({
+        id: card.id,
+        frontImage: card.file.url,
+        frontAlt: card.label,
+        order: card.order,
+        status: card.status[0].label
+      });
     }
   }
 }
@@ -128,30 +178,30 @@ function setGameset(gameset) {
  */
 function isGameStarted() {
   // if the game area is visible, then the game has started
-  return $('#uiGameArea').is(':visible');
+  return $("#uiGameArea").is(":visible");
 }
 
-function createCard(id, frontImage, frontAlt='') {
+function createCard(id, frontImage, frontAlt = "") {
   // create the div that will hold the card's front and back faces
   var elDiv = $('<div class="memory-card"></div>');
-  elDiv.attr('data-id', id);
+  elDiv.attr("data-id", id);
 
   // create the front face image
   var elFrontImage = $('<img class="front-face"></img>');
-  elFrontImage.css('background', currentTheme.cardBackgroundColor);
-  elFrontImage.attr('src', frontImage);
-  elFrontImage.attr('alt', frontAlt);
+  elFrontImage.css("background", currentTheme.cardBackgroundColor);
+  elFrontImage.attr("src", frontImage);
+  elFrontImage.attr("alt", frontAlt);
 
   // create the back face image
   var elBackImage = $('<img class="back-face"></img>');
-  elBackImage.css('background', currentTheme.cardBackgroundColor);
-  elBackImage.attr('src', currentTheme.backImage);
-  elBackImage.attr('alt', currentTheme.backAlt);
+  elBackImage.css("background", currentTheme.cardBackgroundColor);
+  elBackImage.attr("src", currentTheme.backImage);
+  elBackImage.attr("alt", currentTheme.backAlt);
 
   // add the front and back faces to the div
   elDiv.append(elFrontImage);
   elDiv.append(elBackImage);
-  
+
   // listen for card click
   elDiv.click(cardClickHandler);
 
@@ -160,7 +210,7 @@ function createCard(id, frontImage, frontAlt='') {
 
 function createGameCards() {
   // prepare game area
-  var elGameArea = $('#uiGameArea');
+  var elGameArea = $("#uiGameArea");
   // remove all cards
   elGameArea.empty();
   // count cards
@@ -168,9 +218,9 @@ function createGameCards() {
   // each card has to be added twice so we have double the number of cards
   var totalCards = maxNumberOfUniqueCards * 2;
   // create new cards
-  for(var card of currentMemoryCards) {
+  for (var card of currentMemoryCards) {
     // each card has to be created twice
-    for(var i=0; i<2; i++) {
+    for (var i = 0; i < 2; i++) {
       // create a card element
       var elCard = createCard(card.id, card.frontImage, card.frontAlt);
       // put it at random order
@@ -180,7 +230,7 @@ function createGameCards() {
       // countCard
       cardCount++;
     }
-    
+
     if (cardCount == totalCards) {
       break;
     }
@@ -191,7 +241,7 @@ function createGameCards() {
  * Starts/Restarts a new game
  * Advances the game from the intro screen into the game area
  */
-function startGame(order=null, startingPlayerId=null) {
+function startGame(order = null, startingPlayerId = null) {
   // if we have an incoming card order list
   if (order) {
     // use it to start our game
@@ -201,23 +251,23 @@ function startGame(order=null, startingPlayerId=null) {
     shuffleList(cardsOrder);
   }
   if (startingPlayerId) {
-    currentPlayer = players[startingPlayerId]
+    currentPlayer = players[startingPlayerId];
   }
-  
+
   // reset # of found matches
   matchesFound = 0;
   // reset game variables
   lockBoard = false;
   firstCard = secondCard = null;
-  
+
   // hide game over screen (if visible)
-  $('#uiGameOver').hide();
+  $("#uiGameOver").hide();
   // hide main menu screen
-  $('#uiMainMenu').hide();
+  $("#uiMainMenu").hide();
   // create/recreate the game cards
   createGameCards();
   // show game area
-  $('#uiGameArea').show();
+  $("#uiGameArea").show();
 }
 
 /**
@@ -226,15 +276,15 @@ function startGame(order=null, startingPlayerId=null) {
  */
 function endGame() {
   // hide the game area
-  $('#uiGameArea').hide();
+  $("#uiGameArea").hide();
   // show the game over area
-  $('#uiGameOver').show();
+  $("#uiGameOver").show();
 }
 
 /**
  * If the board is not locked, and the clicked card is not the same first card already flipped
  * then flip the card
- * 
+ *
  * @param {*} card The card to be flipped
  */
 function flipCard(card) {
@@ -243,10 +293,10 @@ function flipCard(card) {
   // if no card return
   if (!card) return;
   // if we are clicking the same first flipped card, return
-  if (firstCard && (card.css('order') === firstCard.css('order'))) return;
+  if (firstCard && card.css("order") === firstCard.css("order")) return;
 
   // otherwise, flip the card
-  card.addClass('flip');
+  card.addClass("flip");
 
   // if no first card flipped
   if (firstCard == null) {
@@ -266,7 +316,7 @@ function flipCard(card) {
  * otherwise, unflip the cards and start a new turn
  */
 function checkForMatch() {
-  var isMatch = firstCard.attr('data-id') === secondCard.attr('data-id');
+  var isMatch = firstCard.attr("data-id") === secondCard.attr("data-id");
   isMatch ? disableCards() : unflipCards();
 }
 
@@ -276,8 +326,8 @@ function checkForMatch() {
  * Otherwise, start a new turn
  */
 function disableCards() {
-  firstCard.off('click');
-  secondCard.off('click');
+  firstCard.off("click");
+  secondCard.off("click");
 
   matchesFound++;
 
@@ -304,8 +354,8 @@ function unflipCards() {
   lockBoard = true;
 
   setTimeout(() => {
-    firstCard.removeClass('flip');
-    secondCard.removeClass('flip');
+    firstCard.removeClass("flip");
+    secondCard.removeClass("flip");
 
     newTurn();
   }, 1500);
@@ -321,17 +371,17 @@ function newTurn() {
 
 /**
  * Generic function that shuffles any give list
- * 
+ *
  * @param {*} list A list to be shuffled
  */
 function shuffleList(list) {
   var i, j, temp;
 
   for (i = list.length - 1; i > 0; i--) {
-      j = Math.floor(Math.random() * (i + 1));
-      temp = list[i];
-      list[i] = list[j];
-      list[j] = temp;
+    j = Math.floor(Math.random() * (i + 1));
+    temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
   }
   return list;
 }
@@ -342,15 +392,27 @@ function shuffleList(list) {
 function updatePlayers() {
   if (!players || players.length == 0) return;
 
-  var elPlayers = $('#uiPlayers');
+  var elPlayers = $("#uiPlayers");
   elPlayers.empty();
   var firstTime = true;
   for (var playerId in players) {
     var player = players[playerId];
     if (!firstTime) {
-      elPlayers.append('<label>&nbsp;|&nbsp;</label>');
+      elPlayers.append("<label>&nbsp;|&nbsp;</label>");
     }
-    elPlayers.append($('<span id="playerspan' + playerId + '"><label id="player' + playerId + '">' + player.name + '<span id="playerscore' + playerId + '"></span></label></span>'));
+    elPlayers.append(
+      $(
+        '<span id="playerspan' +
+          playerId +
+          '"><label id="player' +
+          playerId +
+          '">' +
+          player.name +
+          '<span id="playerscore' +
+          playerId +
+          '"></span></label></span>'
+      )
+    );
 
     updatePlayerControls(player);
     firstTime = false;
@@ -362,25 +424,25 @@ function updatePlayers() {
 
 /**
  * Updates the selected player who is allowed to play the game
- * 
+ *
  * @param {*} player The current selected player
  */
 function updateCurrentPlayer(player) {
   // if we already have a selected player
   if (currentPlayer) {
     // clear it's style
-    $('#player' + currentPlayer.personId).css('font-weight', '');
+    $("#player" + currentPlayer.personId).css("font-weight", "");
   }
 
   currentPlayer = player;
   if (currentPlayer) {
-    $('#player' + player.personId).css('font-weight', 'bold');
+    $("#player" + player.personId).css("font-weight", "bold");
   }
 }
 
 /**
  * Updates the selected player who is allowed to play the game
- * 
+ *
  * @param {*} playerIds The current selected player
  */
 function setLocalPlayers(playerIds) {
@@ -395,20 +457,24 @@ function setLocalPlayers(playerIds) {
 
 /**
  * Updates the player controls' enabled/disabled flag in the game
- * 
+ *
  * @param {*} player The player object
  */
 function updatePlayerControls(player) {
   if (!player) return;
 
-  if (currentPlayer && currentPlayer.personId == player.personId) {
+  if (currentPlayer && currentPlayer.personId === player.personId) {
     currentPlayer.controlsEnabled = player.controlsEnabled;
   }
 
   if (player.controlsEnabled) {
-    $('#playerspan' + player.personId + '> img').remove();
+    $("#playerspan" + player.personId + "> img").remove();
   } else {
-    $('#playerspan' + player.personId).append($('<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'));
+    $("#playerspan" + player.personId).append(
+      $(
+        '<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'
+      )
+    );
   }
 }
 
@@ -421,8 +487,10 @@ function updateScores() {
       playerScores[playerId] = 0;
     }
 
-    $('#playerscore' + playerId).empty();
-    $('#playerscore' + playerId).append($('<label>&nbsp;(score: ' + playerScores[playerId] + ')<label>'));
+    $("#playerscore" + playerId).empty();
+    $("#playerscore" + playerId).append(
+      $("<label>&nbsp;(score: " + playerScores[playerId] + ")<label>")
+    );
   }
 }
 
@@ -457,24 +525,27 @@ function startGameHandler() {
   startGameHook();
 }
 
-
 function endGameHandler() {
   endGameHook();
 }
 
 function cardClickHandler() {
   // if this game instance is controlled by player(s), then only selected and controls-enabled player is allowed to click
-  if (!currentPlayer.controlsEnabled || !localPlayerIds.includes(currentPlayer.personId)) return;
+  if (
+    !currentPlayer.controlsEnabled ||
+    !localPlayerIds.includes(currentPlayer.personId)
+  )
+    return;
   // grab the card being flipped
   var elCard = $(this);
   // handle card flipping/unflipping...etc
   flipCard(elCard);
   // send a gameMessage to other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'flipCard',
-      data: elCard.css('order')
+      type: "flipCard",
+      data: elCard.css("order")
     }
   });
 }
@@ -493,11 +564,11 @@ function getGameState() {
 
   // prepare flipped card information
   var flippedCards = [];
-  $('.memory-card').each((index, value) => {
+  $(".memory-card").each((index, value) => {
     var elCard = $(value);
 
-    if (elCard.hasClass('flip')) {
-      flippedCards.push(elCard.css('order'));
+    if (elCard.hasClass("flip")) {
+      flippedCards.push(elCard.css("order"));
     }
   });
 
@@ -507,8 +578,8 @@ function getGameState() {
     themeName: currentThemeName,
     flippedCards: flippedCards,
     isGameStarted: isGameStarted(),
-    firstCardOrder: firstCard ? firstCard.css('order') : '',
-    secondCardOrder: secondCard ? secondCard.css('order') : '',
+    firstCardOrder: firstCard ? firstCard.css("order") : "",
+    secondCardOrder: secondCard ? secondCard.css("order") : "",
     players: Object.values(players),
     playerScores: playerScores,
     currentPlayer: currentPlayer
@@ -517,7 +588,7 @@ function getGameState() {
 
 /**
  * Updates the current game's state to match the incoming state
- * 
+ *
  * @param {*} gameState The game state information
  */
 function setGameState(gameState) {
@@ -534,15 +605,15 @@ function setGameState(gameState) {
   // start/restart the game
   if (gameState.isGameStarted) {
     startGame(gameState.cardsOrder, currentPlayer);
-  
+
     // flip cards to match already running game's state
-    $('.memory-card').each((index, value) => {
+    $(".memory-card").each((index, value) => {
       var elCard = $(value);
-      
-      var cardOrder = elCard.css('order');
+
+      var cardOrder = elCard.css("order");
       if (gameState.flippedCards.includes(cardOrder)) {
         // flip the card
-        elCard.addClass('flip');
+        elCard.addClass("flip");
 
         // check if we already have a first/second card then set them up
         if (cardOrder == gameState.firstCardOrder) {
@@ -552,7 +623,7 @@ function setGameState(gameState) {
         } else {
           // if it is not the first or second opened cards
           // disable the card
-          elCard.off('click');
+          elCard.off("click");
         }
       }
     });
@@ -580,34 +651,33 @@ function startGameHook() {
   // start/restart the game
   startGame();
 
-
   // send message to all other games to start their game
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'startGame',
-      data: {cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId}
+      type: "startGame",
+      data: { cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId }
     }
   });
 }
 
 /**
  * Sets Gameshell information (such as the current user type) in the game
- * 
+ *
  * @param {*} gameshellInfo Information needed by the game about the Gameshell
  */
 function setGameshellInfoHook(gameshellInfo) {
   // handle the userType information
   userType = gameshellInfo.userType;
-  
+
   // hide the start/restart buttons if this was a player
   // 2 is Therapist UserType
   if (userType != 1 && userType != 3) {
-    $('#uiStartGame').show();
-    $('#uiRestartGame').show();
+    $("#uiStartGame").show();
+    $("#uiRestartGame").show();
   } else {
-    $('#uiStartGame').hide();
-    $('#uiRestartGame').hide();
+    $("#uiStartGame").hide();
+    $("#uiRestartGame").hide();
   }
 
   // grab the user(s) playing this game on the current computer
@@ -618,7 +688,7 @@ function setGameshellInfoHook(gameshellInfo) {
       localPlayerIds.push(player.personId);
     }
   }
-  
+
   currentPlayer = gameshellInfo.currentPlayer;
   updatePlayers();
 
@@ -629,13 +699,13 @@ function setGameshellInfoHook(gameshellInfo) {
 
 /**
  * Changes the theme of the game based on the theme name passed to it
- * 
+ *
  * @param {string} theme Name of theme to be applied.
  */
 function setThemeHook(theme) {
   // change the theme
   setTheme(theme);
-  
+
   // since changing the theme will affect the cards
   // check if the game is already started
   if (isGameStarted()) {
@@ -645,17 +715,17 @@ function setThemeHook(theme) {
 
   // send message to all other games to change their themes
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'setTheme',
-      data: {theme: theme, cardsOrder: cardsOrder}
+      type: "setTheme",
+      data: { theme: theme, cardsOrder: cardsOrder }
     }
   });
 }
 
 /**
  * Changes the gameset for this game.
- * 
+ *
  * @param {*} data Gameset to use in this game.
  */
 function setGamesetHook(data) {
@@ -671,28 +741,26 @@ function setGamesetHook(data) {
 
   // send message to all other games to change their themes
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'setGameset',
-      data: {gameset: data, cardsOrder: cardsOrder}
+      type: "setGameset",
+      data: { gameset: data, cardsOrder: cardsOrder }
     }
   });
 }
 
 /**
  * Changes the current gameset card into a previous or next card.
- * 
+ *
  * @param {string} direction The direction to change the gameset card. 'Next' to go forward or
  *                           'previous' to go backwards.
  */
 function setGamesetItemHook(direction) {
   // this method doesn't apply to this game
-
   // example implementation
   // grab the card
   //var card = direction == 'next' ? nextCard : previousCard;
   //setGamesetCard(card);
-
   // once the gameset card is changed, send a message to all other game instances
   //sendToGameshell({
   //  eventType: 'sendToAll',
@@ -705,7 +773,7 @@ function setGamesetItemHook(direction) {
 
 /**
  * Ends the game
- * 
+ *
  * @param {*} data Data object sent by other game instances. Null if this game (or Gameshell) is initiating the event
  */
 function endGameHook() {
@@ -714,16 +782,16 @@ function endGameHook() {
 
   // send message to all other games to start their game
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'endGame'
+      type: "endGame"
     }
   });
 }
 
 /**
  * Sets the players joined in this game
- * 
+ *
  * @param {*} playersInfo List of player(s) [{id, name, controlsEnabled}]
  */
 function setPlayersHook(allPlayers) {
@@ -744,17 +812,21 @@ function setPlayersHook(allPlayers) {
   // informing them of the new players
   // and sending the gamestate to the new players
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'setPlayers',
-      data: {gameState: getGameState(), newPlayerIds: newPlayerIds, players: allPlayers}
+      type: "setPlayers",
+      data: {
+        gameState: getGameState(),
+        newPlayerIds: newPlayerIds,
+        players: allPlayers
+      }
     }
   });
 }
 
 /**
  * Sets the current selected player currently controls-enabled/allowed to play the game
- * 
+ *
  * @param {*} player Player object {id, name, controlsEnabled}
  */
 function setCurrentPlayerHook(player) {
@@ -762,23 +834,23 @@ function setCurrentPlayerHook(player) {
 
   // inform other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'updateCurrentPlayer',
+      type: "updateCurrentPlayer",
       data: player
     }
   });
 
   // inform Gameshell about player change
   sendToGameshell({
-    eventType: 'setCurrentPlayer',
+    eventType: "setCurrentPlayer",
     message: currentPlayer
   });
 }
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
- * 
+ *
  * @param {*} player Player object {id, name, controlsEnabled}
  */
 function updatePlayerControlsHook(player) {
@@ -786,9 +858,9 @@ function updatePlayerControlsHook(player) {
 
   // inform other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'updatePlayerControls',
+      type: "updatePlayerControls",
       data: player
     }
   });
@@ -796,7 +868,7 @@ function updatePlayerControlsHook(player) {
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
- * 
+ *
  * @param {*} message Player object {id, name, controlsEnabled}
  */
 // function requestGameStatusHook(message) {
@@ -810,7 +882,7 @@ function updatePlayerControlsHook(player) {
 //     eventType: 'sendToPlayers',
 //     data: {
 //       message: 'requestGameStatus',
-//       data: gameState, 
+//       data: gameState,
 //       playerIds: [messgae.person_id]
 //     }
 //   });
@@ -818,51 +890,51 @@ function updatePlayerControlsHook(player) {
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
- * 
+ *
  * @param {*} message Player object {id, name, controlsEnabled}
  */
 function userJoined(message) {
   // updatePlayerControls(player);
-  console.log('userJoined');
+  console.log("userJoined");
   console.log(message);
 
   // inform other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'userJoined',
-      data: message 
+      type: "userJoined",
+      data: message
     }
   });
 }
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
- * 
+ *
  * @param {*} message Player object {id, name, controlsEnabled}
  */
 function pauseGame(message) {
   // updatePlayerControls(player);
-  console.log('pauseGame');
+  console.log("pauseGame");
   console.log(message);
 
   // inform other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'pauseGame',
-      data: message 
+      type: "pauseGame",
+      data: message
     }
   });
 }
 
 /**
  * list of players that current went online
- * 
+ *
  * @param {*} personIds number array of person ids
  */
 function playersOnline(personIds) {
-  console.log('playersOnline');
+  console.log("playersOnline");
   console.log(personIds);
   for (personId of personIds) {
     if (players[personId]) {
@@ -873,27 +945,26 @@ function playersOnline(personIds) {
     }
   }
   if (isGameMaster() && isGameStarted()) {
-    gameState = getGameState()
+    gameState = getGameState();
     sendToGameshell({
-      eventType: 'sendToPlayers',
+      eventType: "sendToPlayers",
       playerIds: personIds,
       message: {
-        type: 'gameState',
-        data: gameState 
+        type: "gameState",
+        data: gameState
       }
     });
-
   }
 }
 
 /**
  * Returns true if any of the local players are the gamemaster
- * 
+ *
  */
 function isGameMaster() {
-  console.log('isGameMaster');
+  console.log("isGameMaster");
   gamemaster = getGamemaster();
-  return localPlayerIds.includes(gamemaster.personId)
+  return localPlayerIds.includes(gamemaster.personId);
 }
 
 function getGamemaster() {
@@ -904,14 +975,13 @@ function getGamemaster() {
   }
 }
 
-
 /**
  * list of players that went offline
- * 
+ *
  * @param {*} personIds number array of person ids
  */
 function playersOffline(personIds) {
-  console.log('playersOffline');
+  console.log("playersOffline");
   console.log(personIds);
   for (personId of personIds) {
     if (players[personId]) {
@@ -927,38 +997,37 @@ function playersOffline(personIds) {
   //   eventType: 'sendToAll',
   //   message: {
   //     type: 'pauseGame',
-  //     data: message 
+  //     data: message
   //   }
   // });
 }
 
 /**
  * Updates the controls of the player (by enabling/disabling them)
- * 
+ *
  * @param {*} message Player object {id, name, controlsEnabled}
  */
 function userLeft(message) {
   // updatePlayerControls(player);
-  console.log('userLeft');
+  console.log("userLeft");
   console.log(message);
 
   // inform other game instances
   sendToGameshell({
-    eventType: 'sendToAll',
+    eventType: "sendToAll",
     message: {
-      type: 'userLeft',
-      data: message 
+      type: "userLeft",
+      data: message
     }
   });
 }
 
 /**
  * Handles messages sent by other game instances or by the gameshell
- * 
+ *
  * @param {*} message Data object containing a 'message' and it's associated 'data'
  */
 function handleGameMessageHook(message) {
-
   // if game is not ready yet
   if (!isGameReady) {
     // then store the message in a queue
@@ -970,13 +1039,13 @@ function handleGameMessageHook(message) {
   var data = message.data;
   switch (messageType) {
     /*
-    * The following required methods enable the Gameshell to appropriately interact with the game.
-    */
-    case 'startGame':
+     * The following required methods enable the Gameshell to appropriately interact with the game.
+     */
+    case "startGame":
       startGame(data.cardsOrder, data.startingPlayerId);
       break;
 
-    case 'setTheme':
+    case "setTheme":
       setTheme(data.theme);
       // if the game had already started before updating the theme
       if (isGameStarted()) {
@@ -985,7 +1054,7 @@ function handleGameMessageHook(message) {
       }
       break;
 
-    case 'setGameset':
+    case "setGameset":
       setGameset(data.gameset);
       // if the game had already started before updating the gameset
       if (isGameStarted()) {
@@ -999,11 +1068,11 @@ function handleGameMessageHook(message) {
     //  setGamesetItem();
     //  break;
 
-    case 'endGame':
+    case "endGame":
       endGame();
       break;
 
-    case 'setPlayers':
+    case "setPlayers":
       var isLocalPlayerFound = false;
       // if the local player is one of the new players
       for (var playerId of data.newPlayerIds) {
@@ -1021,15 +1090,15 @@ function handleGameMessageHook(message) {
         setPlayers(data.players);
       }
       break;
-    case 'setLocalPlayers':
+    case "setLocalPlayers":
       setLocalPlayers(data);
       break;
 
-    case 'updateCurrentPlayer':
+    case "updateCurrentPlayer":
       updateCurrentPlayer(data);
       break;
 
-    case 'updatePlayerControls':
+    case "updatePlayerControls":
       updatePlayerControls(data);
       break;
 
@@ -1037,32 +1106,32 @@ function handleGameMessageHook(message) {
     //     userJoined(e.data);
     //     break;
 
-    case 'pauseGame':
-        pauseGame(e.data);
-        break;
+    case "pauseGame":
+      pauseGame(e.data);
+      break;
 
     // case 'userLeft':
     //     userLeft(e.data);
     //     break;
 
-    case 'playersOnline':
+    case "playersOnline":
       playersOnline(data);
       break;
 
-    case 'playersOffline':
+    case "playersOffline":
       playersOffline(data);
       break;
 
-    case 'setGameState':
+    case "setGameState":
       setGameState(data);
       break;
 
-    case 'flipCard':
+    case "flipCard":
       if (message.loggedInPersonId === message.senderPersonId) return;
-      $('.memory-card').each((index, value) => {
+      $(".memory-card").each((index, value) => {
         var elCard = $(value);
 
-        if (elCard.css('order') == data) {
+        if (elCard.css("order") == data) {
           flipCard(elCard);
           return false;
         }
