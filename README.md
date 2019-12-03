@@ -29,7 +29,7 @@ The `gameReady` event means that the game is ready to start. However, it must be
 
 The structure of the `GameInfo` object is:
 
-```JSON
+```
 {
   name: string;
   width: int;
@@ -60,7 +60,7 @@ The structure of the `GameInfo` object is:
 
 Messages sent must be a JSON string and are expected to be of GameGameshellMessage type with the following structure:
 
-```JSON
+```
 {
   tinyeye: true,
   eventType: string,
@@ -89,13 +89,13 @@ The game should listen for incoming messages through the `message` event on the 
 
 The following messages will be sent to the game from the Therapist's Gameshell side:
 
-`startGame` - Prompts the game to start and sends a `gameMessage`
+`startGame` - Prompts the game to start and sends a startGame [gameMessage](#gameMessage) to all game participants. 
   
-* `setTheme` - Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell.
+`setTheme` - Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell.
   
-* `setGameset` - Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. The Gameset object received by the game will have the following structure:
+`setGameset` - Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. The Gameset object received by the game will have the following structure:
   
-  ```JSON
+  ```
   {
     id: number,
     name: string,
@@ -137,28 +137,28 @@ The following messages will be sent to the game from the Therapist's Gameshell s
 
   The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
 
-* `setPreviousGamesetCard` - The usage of this depends on the game. It prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.
+`setPreviousGamesetCard` - The usage of this depends on the game. It prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.
 
-* `setNextGamesetCard` - The usage of this depends on the game. It prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.
+`setNextGamesetCard` - The usage of this depends on the game. It prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.
 
-* `endGame` - Prompts the game to end. No data object is sent with this event.
+`endGame` - Prompts the game to end. No data object is sent with this event.
 
-* `setPlayers` - Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
+`setPlayers` - Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
 
-```JSON
+```
 [{id, name, controlsEnabled, gameMaster}]
 ```
 
-* `setCurrentPlayer`
+`setCurrentPlayer`
 Sets the current player who is actively playing the game. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so
 
-* `updatePlayerControls`
+`updatePlayerControls`
 Updates the `controlsEnabled` flag of a player's object. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
 The following messages will be sent to the game from their respective Gameshell sides:
 
 <a name="gameMessage"></a>
 
-* `gameMessage`
+`gameMessage`
 Whenever a game sends a `sendToAll` or `sendToPlayers` message to the Gameshell, the Gameshell in turn will forward this message to all other games or to a set of players, respectively. The message received by other game(s) is received in the [gameMessage](#gameMessage) event. The game should know how to handle such messages as they were sent by the game itself (from another instance).
 
 * `setGameshellInfo`
