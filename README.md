@@ -89,11 +89,11 @@ The game should listen for incoming messages through the `message` event on the 
 
 The following messages will be sent to the game from the Therapist's Gameshell side:
 
-`startGame` - Prompts the game to start and sends a startGame [gameMessage](#gameMessage) to all game participants. 
+`startGame` - Prompts the game to start and sends a 'startGame' [gameMessage](#gameMessage) type to all game participants. 
   
-`setTheme` - Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell.
+`setTheme` - Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell. Sends a 'setTheme' [gameMessage](#gameMessage) type to all game participants. 
   
-`setGameset` - Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. The Gameset object received by the game will have the following structure:
+`setGameset` - Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. Sends a 'setGameset' [gameMessage](#gameMessage) type to all game participants. The Gameset object received by the game will have the following structure:
   
   ```
   {
@@ -135,25 +135,20 @@ The following messages will be sent to the game from the Therapist's Gameshell s
   }
   ```
 
-  The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
+The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
 
-`setPreviousGamesetCard` - The usage of this depends on the game. It prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.
+`setPreviousGamesetCard` - The usage of this depends on the game. It prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.  Sends a 'setGamesetItem' [gameMessage](#gameMessage) type to all game participants. 
 
-`setNextGamesetCard` - The usage of this depends on the game. It prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.
+`setNextGamesetCard` - The usage of this depends on the game. It prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.  Sends a 'setGamesetItem' [gameMessage](#gameMessage) type to all game participants. 
 
-`endGame` - Prompts the game to end. No data object is sent with this event.
+`endGame` - Prompts the game to end and sends an 'endGame' [gameMessage](#gameMessage) to all game participants. 
 
-`setPlayers` - Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
+`setPlayers` - Sets the players of the game and sends a 'setPlayers' [gameMessage](#gameMessage) to all game participants. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. This is an array of `GameParticipant` objects as defined in the `gameshell.js` file.
 
-```
-[{id, name, controlsEnabled, gameMaster}]
-```
+`setCurrentPlayer` - Sets the current player who is actively playing the game and sends a 'updateCurrentPlayer' [gameMessage](#gameMessage) to all game participants. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so.
 
-`setCurrentPlayer`
-Sets the current player who is actively playing the game. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so
+`updatePlayerControls` - Updates the `controlsEnabled` flag of a player's object and sends a 'updatePlayerControls' [gameMessage](#gameMessage) to all game participants. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
 
-`updatePlayerControls`
-Updates the `controlsEnabled` flag of a player's object. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
 The following messages will be sent to the game from their respective Gameshell sides:
 
 <a name="gameMessage"></a>
@@ -161,19 +156,40 @@ The following messages will be sent to the game from their respective Gameshell 
 `gameMessage`
 Whenever a game sends a `sendToAll` or `sendToPlayers` message to the Gameshell, the Gameshell in turn will forward this message to all other games or to a set of players, respectively. The message received by other game(s) is received in the [gameMessage](#gameMessage) event. The game should know how to handle such messages as they were sent by the game itself (from another instance).
 
-* `setGameshellInfo`
-Whenever the game sends the `gameReady` event to the Gameshell, the Gameshell will respond by sending the game a `setGameshellInfo` message. Through this message, the Gameshell will introduce itself by sending an object with the following structure:
+`setGameshellInfo`- Whenever the game sends the `gameReady` event to the Gameshell, the Gameshell will respond by sending the game a `setGameshellInfo` message. Through this message, the Gameshell will introduce itself by sending an object with the following structure:
 
 ``` javascript
 {
-  userType: 'Therapist'|'Student'|'2Students',
-  players: [{id, name, controlsEnabled}],
-  currentPlayer: {id, name, controlsEnabled, gameMaster}
+  userType: number, // student = 1, therapist = 2, ehelper = 3
+  players: [GameParticipant],
+  currentPlayer: GameParticipant 
 }
 ```
 
-`userType` - The type of the user of the current Gameshell where this game is loaded. Currently, the gameshell user type can be one of three values: `Therapist`, `Student`, or `2Students`. A `Therapist` user has controls that enable special interaction with the game. `Student` means only one student is at the computer playing the game. `2Students` means two students are at one computer playing the game. Students can only interact with the game itself. No special controls on their end.
+- `userType` - The type of the user of the current Gameshell where this game is loaded. Currently, the gameshell user type can be one of three values: 1 (Student), 2 (Therapist),  3 (E-Helper). A `Therapist` user has controls that enable special interaction with the game.
 
-`players` - The list of __local player(s)__ currently connected to the Gameshell loading this game instance.
+- `players` - The list of __player(s)__ currently connected to the Gameshell loading this game instance.
 
-`currentPlayer` - In turn taking games, this is the current player allowed to interact with the game.
+- `currentPlayer` - In turn taking games, this is the current player allowed to interact with the game.
+
+### Handling [gameMessages](#gameMessage)
+
+The following gameMessage types need to be implemented by the game.  These gameMessages allow us to interact with the game in a consistent way between different games. Additional gameMessages can be required as necessary but must have the same message format (GameshellGameMessage).
+
+#### Required gameMessages
+
+| type | description |
+| ---------------- | ----------------------------- |
+| startGame | message to start gameplay |
+| setTheme | message to set theme in game |
+| setGameset | message to set the gameset |
+| endGame | message to end game |
+| setPlayers | message to set list of active players |
+| setLocalPlayers | message to set local players who can be controlled by local computer |
+| updateCurrentPlayer | update player whos turn it is |
+| updatePlayerControls | updates whether controls for given player are enabled/disabled |
+| pauseGame | message to pauseGame |
+| playersOnline | message to give list of personIds that recently came "online" for give game instance|
+| playersOffline | message to give list of personIds that recently came "offline" for give game instance|
+| setGameState | setting the gamestate. When this is sent it should set the game state of the local game to match what is sent. |
+
