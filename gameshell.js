@@ -74,6 +74,7 @@ class GameGameshellMessage {
 /**
  * Handles binding an event listener to an element
  * Supports event binding for IE8
+ * https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
  *
  * @param {*} element               element to bind the event listener to
  * @param {string} eventName        event name to be bound

@@ -1023,7 +1023,7 @@ function userLeft(message) {
 }
 
 /**
- * Handles messages sent by other game instances or by the gameshell
+ * Handles messages sent by other game instances (via the gameshell) or messages directy from the gameshell
  *
  * @param {*} message Data object containing a 'message' and it's associated 'data'
  */
