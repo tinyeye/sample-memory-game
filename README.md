@@ -44,19 +44,22 @@ The structure of the `GameInfo` object is:
 ```
 
 `name` - *Required. The name of the game
+
 `width` - *Required. Width of the game
+
 `height` - *Required. Height of the game
+
 `autoScale` - *Required. Is this game allowed to be scaled, or does the Gameshell have to abide by the width x height. `True` by default.
 
-`isTurnTaking` - *Required. Indicates whether this game has turns or not. `False` by default.
+`isTurnTaking` - *Required. Indicates whether this game supports turn playing. `False` by default
 
-`allowGameCardNavigation` - *Required. Indicates whether this game has allows the therapist to navigate the game cards manual or not. Some games do not require game card navigation e.g. Sample Memory Game. `False` by default.
+`allowGameCardNavigation` - *Required. Indicates whether this game allows the therapist to navigate the game cards manual or not. Some games do not require game card navigation e.g. Sample Memory Game. `False` by default.
 
 `themes` - Optional. List of theme names available, first theme MUST be 'default'. If not provided, the game will be considered not to have any themes
 
 `gamesetsAllowed` - Optional. Indicates whether this game allows gamesets to be loaded. If not provided, the game is considered not to accept any gamesets
 
-`minimumGamesetCardsAllowed` - Optional. Minimum number of gameset cards required per gameset. If not provided and 'gamesetsAllowed' is true, then any number of gameset cards is allowed
+`minimumGamesetCardsAllowed` - Optional. Minimum number of gameset cards required per gameset. If not provided and 'gamesetsAllowed' is `true`, then any number of gameset cards is allowed
 
 Messages sent must be a JSON string and are expected to be of GameGameshellMessage type with the following structure:
 
@@ -70,6 +73,7 @@ Messages sent must be a JSON string and are expected to be of GameGameshellMessa
 ```
 
 `tinyeye: true` - must exist on this object to be accepted by the Gameshell
+
 `eventType` - An event type. It must be one of the following: [`gameReady`, `sendToAll`, `sendToPlayers`, `setCurrentPlayer`]
 
 `playerIds` - A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
