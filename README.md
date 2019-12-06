@@ -1,122 +1,199 @@
-# Game Developer Instructions:
+# Game Developer Instructions
 
-The first step is to include `gameshell.js` in your project. Alternatively, you can use `gameshell.js` as a guide and create your own file.
+## Introduction
 
-The `gameshell.js` file contains a function that receive incoming messages from the Gameshell and forwards it to the appropriate hanedlers (called hooks in this example). It also contains a function that sends a message to the Gameshell. In addition, it defines the GameInfo class, a function to log messages to console, and a generic way to bind to events.
+These instructions are intended to help you develop games that will work with our platform.  Games can be tested by going to our [Gameshell](gameshell.tinyeye.com) (gameshell.tinyeye.com).
+
+To connect you'll have to provide credentials for both the therapist and e-helper side.  For the e-helper side you must also provide the channel_id that was generated after logging in as a therapist.
+
+### Credentials
+
+ | username | password |
+ | -------- | -------- |
+ | therapist| Games!   |
+ | ehelper  | Games!   |
+
+## Include gameshell.js
+
+The first step is to include `gameshell.js` in your project. Alternatively, you can use `gameshell.js` as a guide and create your own file.  All communication between the game and gameshell happen through the `gameshell.js` file.  the file is commented well and will help you in using it or developing your own equivalent `gameshell.js` file.  
 
 The game loaded on the `Therapist`'s side will receive events from it's game shell (for example: `startGame` or `endGame` events). It is the game's responsibility to forward such events to other game instances. This game instance is considered to be the `server` for other games in the session.
 
-The second step is to interact with the GameShell through the functionality provided inside `gameshell.js`.
+## Sending a Message to Gameshell
 
-1. __Sending a message to Gameshell__
-    
-    Once the game is ready, it needs to send a `gameReady` event to the Gameshell. The data object sent with this event should be of type GameInfo (the object is defined in `gameshell.js`)
+The second step is to interact with the GameShell through the functionality provided inside `gameshell.js` file.
 
-    The `gameReady` event means that the game is ready to start. However, it must be noted that the game shouldn't start on it's own. It should instead wait for the `startGame` event from the Gameshell. After the game is ready and before it starts, the game could be in an idle screen, a main menu screen, or just a title screen to name a few examples.
+Once the game is ready, it needs to send a `gameReady` event to the Gameshell. The data object sent with this event should be of type GameInfo This object is defined in `gameshell.js`.
 
-    The structure of the `GameInfo` object is:
-    ```
-    {
-      name: string;
-      width: int;
-      height: int;
-      autoScale: boolean;
-      themes: [string];
-      gamesetsAllowed: boolean;
-      minimumGamesetCardsAllowed: int;
-      isTurnTaking: boolean;
+The `gameReady` event means that the game is ready to start. However, it must be noted that the game shouldn't start on it's own. It should instead wait for the `startGame` event from the Gameshell. After the game is ready and before it starts, the game could be in an idle screen, a main menu screen, or just a title screen to name a few examples.
+
+The structure of the `GameInfo` object is:
+
+```
+{
+  name: string;
+  width: int;
+  height: int;
+  autoScale: boolean;
+  themes: [string];
+  gamesetsAllowed: boolean;
+  minimumGamesetCardsAllowed: int;
+  isTurnTaking: boolean;
+  allowGameCardNavigation: boolean;
+}
+```
+
+`name` - *Required. The name of the game
+
+`width` - *Required. Width of the game
+
+`height` - *Required. Height of the game
+
+`autoScale` - *Required. Is this game allowed to be scaled, or does the Gameshell have to abide by the width x height. `True` by default.
+
+`isTurnTaking` - *Required. Indicates whether this game supports turn playing. `False` by default
+
+`allowGameCardNavigation` - *Required. Indicates whether this game allows the therapist to navigate the game cards manual or not. Some games do not require game card navigation e.g. Sample Memory Game. `False` by default.
+
+`themes` - Optional. List of theme names available, first theme MUST be 'default'. If not provided, the game will be considered not to have any themes
+
+`gamesetsAllowed` - Optional. Indicates whether this game allows gamesets to be loaded. If not provided, the game is considered not to accept any gamesets
+
+`minimumGamesetCardsAllowed` - Optional. Minimum number of gameset cards required per gameset. If not provided and 'gamesetsAllowed' is `true`, then any number of gameset cards is allowed
+
+Messages sent must be a JSON string and are expected to be of GameGameshellMessage type with the following structure:
+
+```
+{
+  tinyeye: true,
+  eventType: string,
+  message: object,
+  playerIds: [int]
+}
+```
+
+`tinyeye: true` - must exist on this object to be accepted by the Gameshell
+
+`eventType` - An event type. It must be one of the following: [`gameReady`, `sendToAll`, `sendToPlayers`, `setCurrentPlayer`]
+
+`playerIds` - A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
+
+`message` - This is a generic message object that will have different data depending on the eventType property. The table below lays out what message object type is expected for what eventType.  The message object types are defined in `gameshell.js`
+
+| eventType        | message object type           |
+| ---------------- | ----------------------------- |
+| gameReady        | `GameInfo` object             |
+| setCurrentPlayer | `GameParticipant` object      |
+| sendToAll        | `GameshellGameMessage` object |
+| sendToPlayers    | `GameshellGameMessage` object |
+
+## Receiving a message from the Gameshell
+
+The game should listen for incoming messages through the `message` event on the current `window` object.  This happens from the [EventTarget.addEventListener()](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener) method.  The ```bindEvent()``` method is a wrapper for the `addEventListener()` in the `gameshell.js` file.
+
+The following messages will be sent to the game from the Therapist's Gameshell side:
+
+`startGame` - Prompts the game to start and sends a 'startGame' [gameMessage](#gameMessage) type to all game participants. 
+  
+`setTheme` - Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell. Sends a 'setTheme' [gameMessage](#gameMessage) type to all game participants. 
+  
+`setGameset` - Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. Sends a 'setGameset' [gameMessage](#gameMessage) type to all game participants. The Gameset object received by the game will have the following structure:
+  
+  ```
+  {
+    id: number,
+    name: string,
+    language: {
+      id: number,
+      label: string
     }
-    ```
-    `name` - *Required. The name of the game
-    
-    `width` - *Required. Width of the game
-    
-    `height` - *Required. Height of the game
-    
-    `autoScale` - *Required. Is this game allowed to be scaled, or does the Gameshell have to abide by the width x height. `True` by default.
-
-    `isTurnTaking` - *Required. Indicates whether this game has turns or not. `False` by default.
-
-    `themes` - Optional. List of theme names available, first theme MUST be 'default'. If not provided, the game will be considered not to have any themes
-
-    `gamesetsAllowed` - Optional. Indicates whether this game allows gamesets to be loaded. If not provided, the game is considered not to accept any gamesets
-
-    `minimumGamesetCardsAllowed` - Optional. Minimum number of gameset cards required per gameset. If not provided and 'gamesetsAllowed' is true, then any number of gameset cards is allowed
-
-    Messages sent must be a JSON string and are expected to have the following structure:
-    ```
-    {
-      tineye: true,
-      type: string,
-      playerIds: [int],
-      data: object
+    media_type: {
+      id: number,
+      label: string
     }
-    ```
+    status: [{
+      id: number,
+      label: string
+    }],
+    file: {
+      id: number,
+      name: string,
+      url: string
+    },
+    cards: [
+      {
+        id: number,
+        label: string,
+        order: number,
+        file: {
+          id: number,
+          name: string,
+          url: string
+        },
+        status: {
+          id: number,
+          label: string
+        }
+      }
+    ]
+  }
+  ```
 
-    `tinyeye: true` - must exist on this object to be accepted by the Gameshell
-    
-    `type` - A string message type. It must be one of the following: [`gameReady`, `sendToAll`, `sendToPlayers`, `currentPlayerChanged`]
+The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
 
-    `playerIds` - A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
+`setPreviousGamesetCard` - The usage of this depends on the game. It prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.  Sends a 'setGamesetItem' [gameMessage](#gameMessage) type to all game participants. 
 
-    `data` - A `GameInfo` object when the message type is `gameReady`. A `player` object - `{id, name, controlsEnabled, gameMaster}` - when the message type is `currentPlayerChanged`. Any other object otherwise.
+`setNextGamesetCard` - The usage of this depends on the game. It prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.  Sends a 'setGamesetItem' [gameMessage](#gameMessage) type to all game participants. 
 
-1. __Handling Gameshell Messages__
+`endGame` - Prompts the game to end and sends an 'endGame' [gameMessage](#gameMessage) to all game participants. 
 
-    The game should listen for incoming messages through the `message` event on the current `window` object.
+`setPlayers` - Sets the players of the game and sends a 'setPlayers' [gameMessage](#gameMessage) to all game participants. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. This is an array of `GameParticipant` objects as defined in the `gameshell.js` file.
 
-    The following messages will be sent to the game ONLY from the Therapist's Gameshell side:
-    * __`startGame`__
-      Prompts the game to start. No data object is sent with this event.
-      
-    * __`setTheme`__
-      Sets the theme of the game. The Gameshell will provide the theme name to change to. The list of theme names had already been provided to the Gameshell in the GameInfo class when the game sends the `gameReady` event to the Gameshell.
+`setCurrentPlayer` - Sets the current player who is actively playing the game and sends a 'updateCurrentPlayer' [gameMessage](#gameMessage) to all game participants. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so.
 
-    * __`setGameset`__
-      Sets the gameset of the game. Each game needs to provide it's default gameset in case no gameset was assigned by the Gameshell. The Gameset object received by the game will have the following structure:
-      ```
-      { name: string, isOrdered: boolean, cards: [{label, path, order}] }
-      ```
+`updatePlayerControls` - Updates the `controlsEnabled` flag of a player's object and sends a 'updatePlayerControls' [gameMessage](#gameMessage) to all game participants. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
 
-      The minimum number of cards acceptable by the game is sent to the Gameshell in the GameInfo object when the game sends the `gameReady` event to the Gameshell.
+The following messages will be sent to the game from their respective Gameshell sides:
 
-    * __`setPreviousGamesetCard`__
-      Prompts the game to go back to the previous game card from the currently loaded gameshell. No data object is sent with this event.
+<a name="gameMessage"></a>
 
-    * __`setNextGamesetCard`__
-    Prompts the game to advance to the next game card from the currently loaded gameshell. No data object is sent with this event.
+`gameMessage`
+Whenever a game sends a `sendToAll` or `sendToPlayers` message to the Gameshell, the Gameshell in turn will forward this message to all other games or to a set of players, respectively. The message received by other game(s) is received in the [gameMessage](#gameMessage) event. The game should know how to handle such messages as they were sent by the game itself (from another instance).
 
-    * __`endGame`__
-    Prompts the game to end. No data object is sent with this event.
+`setGameshellInfo`- Whenever the game sends the `gameReady` event to the Gameshell, the Gameshell will respond by sending the game a `setGameshellInfo` message. Through this message, the Gameshell will introduce itself by sending an object with the following structure:
 
-    * __`setPlayers`__
-    Sets the players of the game. The Therapist is considered a player and will be included in this list. It is up to the game to decide how to handle the Therapist. The therapist, for example, could be allowed different types of controls in the game, or could be allowed to play at any time even in turn taking games. The data object will contain the full list of players currently playing this game. The structure of the data object is:
-    ```
-    [{id, name, controlsEnabled, gameMaster}]
-    ```
+``` javascript
+{
+  userType: number, // student = 1, therapist = 2, ehelper = 3
+  players: [GameParticipant],
+  currentPlayer: GameParticipant 
+}
+```
 
-    * __`setCurrentPlayer`__
-    Sets the current player who is actively playing the game. This is useful for turn-taking games where only one player can play at a time. The game can declare itself to be `isTurnTaking` when sending the GameInfo object. The game MUST respect the current player - in turn taking games - and allow only them to interact with the game, and also prevent others from doing so
+- `userType` - The type of the user of the current Gameshell where this game is loaded. Currently, the gameshell user type can be one of three values: 1 (Student), 2 (Therapist),  3 (E-Helper). A `Therapist` user has controls that enable special interaction with the game.
 
-    * __`updatePlayerControls`__
-    Updates the `controlsEnabled` flag of a player's object. The game must respect this variable and prevent the player from interacting with the game if the controls are not enabled.
+- `players` - The list of __player(s)__ currently connected to the Gameshell loading this game instance.
 
-    The following messages will be sent to the game from their respective Gameshell sides:
-    * __`gameMessage`__
-    Whenever a game sends a `sendToAll` or `sendToPlayers` message to the Gameshell, the Gameshell in turn will forward this message to all other games or to a set of players, respectively. The message received by other game(s) is received in the `gameMessage` event. The game should know how to handle such messages as they were sent by the game itself (from another instance).
+- `currentPlayer` - In turn taking games, this is the current player allowed to interact with the game.
 
-    * __`setGameshellInfo`__
-    Whenever the game sends the `gameReady` event to the Gameshell, the Gameshell will respond by sending the game a `setGameshellInfo` message. Through this message, the Gameshell will introduce itself by sending an object with the following structure:
-    ```
-    {
-      userType: 'Therapist'|'Student'|'2Students',
-      players: [{id, name, controlsEnabled}],
-      currentPlayer: {id, name, controlsEnabled, gameMaster}
-    }
-    ```
+### Handling [gameMessages](#gameMessage)
 
-    `userType` - The type of the user of the current Gameshell where this game is loaded. Currently, the gameshell user type can be one of three values: `Therapist`, `Student`, or `2Students`. A `Therapist` user has controls that enable special interaction with the game. `Student` means only one student is at the computer playing the game. `2Students` means two students are at one computer playing the game. Students can only interact with the game itself. No special controls on their end.
+The following gameMessage types need to be implemented by the game.  These gameMessages allow us to interact with the game in a consistent way between different games. Additional gameMessages can be required as necessary but must have the same message format (GameshellGameMessage).
 
-    `players` - The list of __local player(s)__ currently connected to the Gameshell loading this game instance.
+#### Required gameMessages
 
-    `currentPlayer` - In turn taking games, this is the current player allowed to interact with the game.
+| type | description |
+| ---------------- | ----------------------------- |
+| startGame | message to start gameplay |
+| setTheme | message to set theme in game |
+| setGameset | message to set the gameset |
+| endGame | message to end game |
+| setPlayers | message to set list of active players |
+| setLocalPlayers | message to set local players who can be controlled by local computer |
+| updateCurrentPlayer | update player whos turn it is |
+| updatePlayerControls | updates whether controls for given player are enabled/disabled |
+| pauseGame | message to pauseGame |
+| playersOnline | message to give list of personIds that recently came "online" for give game instance|
+| playersOffline | message to give list of personIds that recently came "offline" for give game instance|
+| setGameState | setting the gamestate. When this is sent it should set the game state of the local game to match what is sent. |
+

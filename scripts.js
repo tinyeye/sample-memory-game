@@ -441,7 +441,7 @@ function updateCurrentPlayer(player) {
 }
 
 /**
- * Updates the selected player who is allowed to play the game
+ * Sets what players are local.
  *
  * @param {*} playerIds The current selected player
  */
@@ -1023,7 +1023,7 @@ function userLeft(message) {
 }
 
 /**
- * Handles messages sent by other game instances or by the gameshell
+ * Handles messages sent by other game instances (via the gameshell) or messages directy from the gameshell
  *
  * @param {*} message Data object containing a 'message' and it's associated 'data'
  */
@@ -1090,6 +1090,7 @@ function handleGameMessageHook(message) {
         setPlayers(data.players);
       }
       break;
+
     case "setLocalPlayers":
       setLocalPlayers(data);
       break;
@@ -1110,10 +1111,6 @@ function handleGameMessageHook(message) {
       pauseGame(e.data);
       break;
 
-    // case 'userLeft':
-    //     userLeft(e.data);
-    //     break;
-
     case "playersOnline":
       playersOnline(data);
       break;
@@ -1126,6 +1123,7 @@ function handleGameMessageHook(message) {
       setGameState(data);
       break;
 
+    // Game specific gameMessages
     case "flipCard":
       if (message.loggedInPersonId === message.senderPersonId) return;
       $(".memory-card").each((index, value) => {

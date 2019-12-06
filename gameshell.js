@@ -51,19 +51,54 @@ class GameInfo {
   }
 }
 
+/**
+ * type: type of message
+ * data: data to be sent with message
+ */
 class GameshellGameMessage {
   constructor({ type, data = null }) {
     this.type = type;
     this.data = data;
   }
 }
-
+/**
+ * tinyeye: value that should always be true
+ * eventType: type of event
+ * message: message object
+ * playerIds: A list of player ids to send the message to. Will be used ONLY when the message type is `sendToPlayers`. Otherwise it is ignored.
+ */
 class GameGameshellMessage {
   constructor({ tinyeye, eventType, message, playerIds = null }) {
     this.tinyeye = tinyeye;
     this.eventType = eventType;
     this.message = message;
     this.playerIds = playerIds;
+  }
+}
+
+/**
+ * name: 
+ * personId:
+ * isLocal:
+ * controlsEnabled:
+ * gameMaster:
+ * isOnline:
+ */
+class GameParticipant {
+  constructor({ 
+    name, 
+    personId, 
+    isLocal = false, 
+    controlsEnabled = false,
+    gameMaster = false,
+    isOnline = false
+  }) {
+    this.name = name; 
+    this.personId = personId;
+    this.isLocal = isLocal; 
+    this.controlsEnabled = controlsEnabled;
+    this.gameMaster = gameMaster;
+    this.isOnline = isOnline;
   }
 }
 
@@ -74,6 +109,7 @@ class GameGameshellMessage {
 /**
  * Handles binding an event listener to an element
  * Supports event binding for IE8
+ * https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
  *
  * @param {*} element               element to bind the event listener to
  * @param {string} eventName        event name to be bound
