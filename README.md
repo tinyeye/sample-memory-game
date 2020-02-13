@@ -218,8 +218,7 @@ The following gameMessage types need to be implemented by the game.  These gameM
 | setLocalPlayers | message to set local players who can be controlled by local computer |
 | updateCurrentPlayer | update player whos turn it is |
 | updatePlayerControls | updates whether controls for given player are enabled/disabled |
-|TODO UPDATE THIS MESSAGE|
-| showLables | show the labels on each card. |
+| showLabels | Show the card labels on each card. This is a "cheat mode" that should only show the cards for a therapist. |
 | pauseGame | message to pauseGame |
 | playersOnline | message to give list of personIds that recently came "online" for give game instance|
 | playersOffline | message to give list of personIds that recently came "offline" for give game instance|
