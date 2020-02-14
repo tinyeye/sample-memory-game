@@ -2,16 +2,46 @@
 
 ## Introduction
 
-These instructions are intended to help you develop games that will work with our platform.  Games can be tested by going to our [Gameshell](gameshell.tinyeye.com) (gameshell.tinyeye.com).
+These instructions are intended to help you develop and test games that will work in the platform.  Therapists use our platform to provide therapy to students. Games are used to create a more engaging experience for students during therapy.  
 
-To connect you'll have to provide credentials for both the therapist and e-helper side.  For the e-helper side you must also provide the channel_id that was generated after logging in as a therapist.
+The sample-memory-game project is given as example implementation of a game that works in the platform. 
+These instructions can be tested out using the sample-memory-game project.
+
+## Terms
+
+**gameshell** - Deployed piece of software that is used to verify that your game is functioning as you expect within our platform. The gameshell's functionality duplicates what is in the platform where these
+games will be deployed.
+
+**gameset** - a group of gameset_cards.
+
+**gameset_cards** - a group of labeled images that are used for therapy.
+
+## Gameplay
+
+Gameplay is defined on the Gameplay document that was included.
+
+## Testing Games
+
+Games can be tested using our [Gameshell](https://www.gameshell.tinyeye.com) (gameshell.tinyeye.com).
+
+To test your game you'll have to deploy it (locally or otherwise) to test it with the gameshell.
+
+To connect you'll use the following credentials for the therapist and e-helper. You must log in with the therapist before logging in as an e-helper. The channel_id that is generated when a therapist logs in must be used when logging as an e-helper.  This channel_id is used to communicate between the 2 sessions.
+
+For the e-helper side you must also provide the channel_id that was generated after logging in as a therapist.
+
+Here's a video using the gameshell to test the sample-memory-game.
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=hllhz8hnjJ8
+" target="_blank"><img src="http://img.youtube.com/vi/hllhz8hnjJ8/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
 
 ### Credentials
 
- | username | password |
- | -------- | -------- |
- | therapist| Games!   |
- | ehelper  | Games!   |
+ | username | password | channel_id |
+ | -------- | -------- | ---------- |
+ | therapist| Games!   | (LEAVE BLANK) |
+ | ehelper  | Games!   | (channel_id from therapist side) |
 
 ## Include gameshell.js
 
@@ -192,6 +222,7 @@ The following gameMessage types need to be implemented by the game.  These gameM
 | setLocalPlayers | message to set local players who can be controlled by local computer |
 | updateCurrentPlayer | update player whos turn it is |
 | updatePlayerControls | updates whether controls for given player are enabled/disabled |
+| showLabels | Show the card labels on each card. This is a "cheat mode" that should only show the cards for a therapist. |
 | pauseGame | message to pauseGame |
 | playersOnline | message to give list of personIds that recently came "online" for give game instance|
 | playersOffline | message to give list of personIds that recently came "offline" for give game instance|
