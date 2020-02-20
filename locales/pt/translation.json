@@ -1,0 +1,11 @@
+{
+  "game-title": "Jogo da Memória",
+  "buttons": {
+    "start-game": "INICIAR JOGO",
+    "pause-game": "PAUSAR JOGO",
+    "restart-game": "REINICIAR JOGO"
+  },
+  "messages": {
+    "thank-you": "Obrigado por jogar! :-)"
+  }
+}

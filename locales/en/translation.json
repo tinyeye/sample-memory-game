@@ -1,0 +1,11 @@
+{
+  "game-title": "Memory Game",
+  "buttons": {
+    "start-game": "START GAME",
+    "pause-game": "PAUSE GAME",
+    "restart-game": "RESTART GAME"
+  },
+  "messages": {
+    "thank-you": "Thank you for playing! :-)"
+  }
+}
