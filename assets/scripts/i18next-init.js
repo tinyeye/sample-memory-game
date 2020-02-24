@@ -12,7 +12,7 @@ $(document).ready(function() {
       "pt-BR": ["pt"]
     },
     load: "languageOnly",
-    preload: ["en", "pt"],
+    preload: ["en", "pt", "cn"],
     nonExplicitWhitelist: true,
     useCookie: true,
     cookieName: "i18next",
