@@ -1,6 +1,6 @@
 $(document).ready(function() {
   var language = navigator.language || navigator.userLanguage;
-  console.log("detected language ->", language);
+  // console.log("detected language ->", language);
 
   // Set the translation files path and fallback language
   var options = {
@@ -31,7 +31,7 @@ $(document).ready(function() {
     debug: true
   };
 
-  console.log("i18next options ->", options);
+  // console.log("i18next options ->", options);
 
   //Once the translations are loaded, translates the whole document
   i18next
