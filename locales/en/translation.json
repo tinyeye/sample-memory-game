@@ -1,0 +1,13 @@
+{
+  "game-title": "Memory Game",
+  "game-description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rutrum scelerisque diam, vitae accumsan augue hendrerit sed. Quisque sit amet ante sit amet velit sollicitudin gravida. Etiam placerat tincidunt tortor ac condimentum. Morbi elementum lectus sit amet nibh rutrum, non.",
+  "game-instructions": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis consequat odio nec justo imperdiet, et posuere ipsum malesuada. Vestibulum quam velit, vehicula eget convallis consectetur, ultricies ut ligula. Maecenas rhoncus eros interdum, pellentesque tellus non, aliquet sapien. Aliquam bibendum accumsan semper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Pellentesque sit amet velit fermentum, vehicula sapien in, ullamcorper velit. Vivamus velit enim, malesuada sit amet eleifend eu, euismod quis mi. Aenean pharetra pulvinar augue, at blandit felis tristique quis. </p> <p>Aliquam erat volutpat. Nulla facilisi. Aliquam erat volutpat. Nullam vitae malesuada orci. Vivamus mi sapien, dapibus id molestie a, placerat nec libero. Quisque pulvinar eleifend blandit. Morbi hendrerit quam et mauris molestie faucibus. Quisque vitae volutpat diam. Vestibulum tortor nisi, luctus nec ornare vel, scelerisque sit amet enim. Pellentesque vitae sodales elit, quis semper lacus. Phasellus eu auctor nunc, nec finibus dui. Aenean dapibus ligula in dui vehicula, ac placerat dolor aliquam. Nunc molestie, lorem eu iaculis varius, enim purus posuere purus, non dictum libero turpis ac mi. </p> <p>Suspendisse potenti. Donec neque elit, mattis vitae rutrum vitae, cursus et ante. Sed ultrices nec dolor id fringilla. Ut luctus euismod lectus, eget sagittis nunc malesuada sit amet. Praesent gravida sed magna eu sollicitudin. Fusce non neque est. Suspendisse efficitur egestas lacus, eget viverra justo viverra et. Donec et rhoncus urna. Cras nunc lorem, viverra nec ornare sit amet, sollicitudin ac neque. Donec egestas ligula dolor.</p>",
+  "buttons": {
+    "start-game": "START GAME",
+    "pause-game": "PAUSE GAME",
+    "restart-game": "RESTART GAME"
+  },
+  "messages": {
+    "thank-you": "Thank you for playing! :-)"
+  }
+}

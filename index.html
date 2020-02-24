@@ -16,20 +16,29 @@
       integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
       crossorigin="anonymous"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body>
     <div class="d-flex flex-column m-auto">
+      <section id="description" class="game-area" style="display: none;">
+        <label>Description:</label>
+        <div data-i18n="[html]game-description"></div>
+      </section>
+
+      <section id="instructions" class="game-area" style="display: none;">
+        <label>Instructions:</label>
+        <div data-i18n="[html]game-instructions"></div>
+      </section>
+
       <section id="uiMainMenu" class="game-area">
-        <label class="game-title m-auto">Memory Game</label>
+        <label class="game-title m-auto" data-i18n="game-title"></label>
         <button
           id="uiStartGame"
           type="button"
           class="btn btn-lg btn-warning m-auto w-75 mt-5"
           style="height: 3em"
-        >
-          START GAME
-        </button>
+          data-i18n="buttons.start-game"
+        ></button>
       </section>
 
       <section
@@ -39,15 +48,14 @@
       ></section>
 
       <section id="uiGameOver" class="game-area" style="display: none">
-        <label class="game-title m-auto">Thank you for playing!</label>
+        <label class="game-title m-auto" data-i18n="messages.thank-you"></label>
         <button
           id="uiRestartGame"
           type="button"
           class="btn btn-lg btn-warning m-auto w-75 mt-5"
           style="height: 3em"
-        >
-          RESTART GAME
-        </button>
+          data-i18n="buttons.restart-game"
+        ></button>
       </section>
 
       <div id="uiPlayers" class="d-flex flex-row"></div>
@@ -63,7 +71,29 @@
       integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
       crossorigin="anonymous"
     ></script>
-    <script src="gameshell.js"></script>
-    <script src="scripts.js"></script>
+    <!-- i18next framework - start -->
+    <script
+      src="assets/vendors/i18next/i18next.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="assets/vendors/i18next/jquery-i18next.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="assets/vendors/i18next/i18nextLocizeBackend.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="assets/vendors/i18next/i18nextBrowserLanguageDetector.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!-- i18next framework - end -->
+
+    <!-- Local scripts - start -->
+    <script src="assets/scripts/i18next-init.js"></script>
+    <script src="assets/scripts/gameshell.js"></script>
+    <script src="assets/scripts/scripts.js"></script>
+    <!-- Local scripts - end -->
   </body>
 </html>
