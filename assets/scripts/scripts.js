@@ -1,5 +1,7 @@
 $(document).ready(initialized);
 
+let singlePlayerMode = true;
+
 // theme can be chosen from this list
 let themes = {
   default: {
@@ -115,8 +117,8 @@ function initialized() {
 
   var gi = new GameInfo({
     name: "Memory Game",
-    width: 640,
-    height: 640,
+    width: 680,
+    height: 680,
     autoScale: false,
     isTurnTaking: true,
     allowGameCardNavigation: false
@@ -390,16 +392,27 @@ function shuffleList(list) {
  * Updates the players in the game
  */
 function updatePlayers() {
-  if (!players || players.length == 0) return;
-
+  // clear current player names
   var elPlayers = $("#uiPlayers");
   elPlayers.empty();
+
+  // if no players available or if single player mode
+  if (singlePlayerMode || !players || players.length == 0)
+    // then exit as we will not display names
+    return;
+
+  // otherwise, display the names
   var firstTime = true;
   for (var playerId in players) {
     var player = players[playerId];
+    
+    // if not the first name added
     if (!firstTime) {
+      // add a spacer
       elPlayers.append("<label>&nbsp;|&nbsp;</label>");
     }
+
+    // add player name
     elPlayers.append(
       $(
         '<span id="playerspan' +
@@ -467,9 +480,8 @@ function updatePlayerControls(player) {
     currentPlayer.controlsEnabled = player.controlsEnabled;
   }
 
-  if (player.controlsEnabled) {
-    $("#playerspan" + player.personId + "> img").remove();
-  } else {
+  $("#playerspan" + player.personId + "> img").remove();
+  if (!player.controlsEnabled) {
     $("#playerspan" + player.personId).append(
       $(
         '<img src="./assets/controls-not-allowed.png" alt="no-controls" height="24" width="24">'
@@ -502,13 +514,29 @@ function updateScores() {
  * @returns List of added player ids
  */
 function setPlayers(allPlayers) {
-  // clear the players list
+  // clear the players lists
   players = {};
+  localPlayerIds = [];
+
+  let isSinglePlayerMode = true;
+  // grab the user(s) playing this game on the current computer
   for (var player of allPlayers) {
-    // add them to the players list
     players[player.personId] = player;
+    // these are the local players, grab their ids
+    if (player.isLocal) {
+      localPlayerIds.push(player.personId);
+    }
+    // if any of the players is remote, then this is a 2-player mode
+    if (!player.isLocal) {
+      isSinglePlayerMode = false;
+    }
   }
 
+  // update the global singleplayermode
+  singlePlayerMode = isSinglePlayerMode;
+  // update the UI based on the new mode
+  // however for this game, the only updates to the UI will happen 
+  // inside the following function call
   updatePlayers();
 }
 
@@ -530,12 +558,17 @@ function endGameHandler() {
 }
 
 function cardClickHandler() {
-  // if this game instance is controlled by player(s), then only selected and controls-enabled player is allowed to click
-  if (
-    !currentPlayer.controlsEnabled ||
-    !localPlayerIds.includes(currentPlayer.personId)
-  )
+  // Allow the click only if SinglePlayerMode
+  // OR if there exists a local player whose controlsEnabled is set to true
+  if (!singlePlayerMode &&
+    (!currentPlayer.controlsEnabled ||
+    !localPlayerIds.includes(currentPlayer.personId))
+  ) {
     return;
+  }
+
+  console.log('cardClickHandler, isLocal: ', currentPlayer && currentPlayer.isLocal?'true':'false');
+  
   // grab the card being flipped
   var elCard = $(this);
   // handle card flipping/unflipping...etc
@@ -656,7 +689,7 @@ function startGameHook() {
     eventType: "sendToAll",
     message: {
       type: "startGame",
-      data: { cardsOrder: cardsOrder, startingPlayerId: currentPlayer.personId }
+      data: { cardsOrder: cardsOrder, startingPlayerId: currentPlayer ? currentPlayer.personId : 0 }
     }
   });
 }
@@ -680,20 +713,12 @@ function setGameshellInfoHook(gameshellInfo) {
     $("#uiRestartGame").hide();
   }
 
-  // grab the user(s) playing this game on the current computer
-  for (var player of gameshellInfo.players) {
-    players[player.personId] = player;
-    // these are the local players, grab their ids
-    if (player.isLocal) {
-      localPlayerIds.push(player.personId);
-    }
-  }
-
   currentPlayer = gameshellInfo.currentPlayer;
-  updatePlayers();
-
+  
   // the game is now ready
   isGameReady = true;
+
+  setPlayers(gameshellInfo.players);
   handleMessageQueue();
 }
 
@@ -1050,7 +1075,7 @@ function handleGameMessageHook(message) {
       // if the game had already started before updating the theme
       if (isGameStarted()) {
         // then restart the game
-        startGame(data.cardsOrder, currentPlayer.personId);
+        startGame(data.cardsOrder);
       }
       break;
 
@@ -1059,7 +1084,7 @@ function handleGameMessageHook(message) {
       // if the game had already started before updating the gameset
       if (isGameStarted()) {
         // then restart the game
-        startGame(data.cardsOrder, currentPlayer.personId);
+        startGame(data.cardsOrder);
       }
       break;
 
